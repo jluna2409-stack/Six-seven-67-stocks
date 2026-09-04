@@ -8,6 +8,7 @@ import { latentTax } from '../taxreport.js';
 import { helpBtn } from '../help.js';
 import { sheet } from '../ui.js';
 import { openDividend } from './tradesheet.js';
+import { alerts, daysUntil } from '../obligations.js';
 
 const RANGES = [['1D',1],['1W',7],['1M',30],['3M',90],['6M',180],['1Y',365],['ALL',1e6]];
 let range = localStorage.getItem('bolsa-sim/range') || '1M';
@@ -51,6 +52,8 @@ function buildSeries(state, liveNw){
 
 export default function dashboard(host){
   host.innerHTML = `
+    <div id="taxalert"></div>
+
     <section class="hero">
       <div class="lbl" data-i18n>${esc(t('dash.networth'))}${helpBtn('networth')}</div>
       <div class="val num" id="nw">—</div>
@@ -105,6 +108,8 @@ export default function dashboard(host){
   const $ = id => host.querySelector('#' + id);
 
   host.addEventListener('click', e => {
+    const g = e.target.closest('[data-goto]');
+    if (g){ location.hash = '#' + g.dataset.goto; return; }
     if (e.target.closest('[data-recdiv]')){
       const rows = positions(get(), quotes);
       if (!rows.length) return;
@@ -176,6 +181,7 @@ export default function dashboard(host){
 
     drawHoldings(rows);
     drawDividends();
+    drawAlert();
 
     // ---- live tape
     $('tape').innerHTML = rows.length ? rows.slice(0, 12).map(r => `
@@ -254,6 +260,35 @@ export default function dashboard(host){
         <div class="ht num" style="text-align:right">${num(H.totalShares, 2)}</div>
         <div class="ht num" style="text-align:right">${usd(H.value)}</div>
       </div>`;
+  }
+
+  /* ---- deadline warning, so a due date never passes unnoticed ---- */
+  function drawAlert(){
+    const due = alerts(get());
+    if (!due.length){ $('taxalert').innerHTML = ''; return; }
+    const late = due.filter(o => o.status === 'overdue');
+    const worst = late[0] || due[0];
+    const d = daysUntil(worst.due);
+    const label = worst.kind === 'annual'
+      ? t('ob.annual', { y: worst.year })
+      : t('ob.dividend', { p: worst.period });
+    const when = d === 0 ? t('ob.dueToday')
+      : d === 1 ? t('ob.dueTomorrow')
+      : d > 0 ? t('ob.daysLeft', { n: d })
+      : t('ob.daysOver', { n: -d });
+    const total = due.reduce((a, o) => a + o.outstanding, 0);
+
+    $('taxalert').innerHTML = `
+      <button class="alert ${late.length ? 'late' : 'warn'}" data-goto="taxes">
+        <span class="ai">${late.length ? '⚠' : '◷'}</span>
+        <span class="at">
+          <span class="a1">${esc(late.length
+            ? (late.length > 1 ? t('ob.alertOverdueN', { n: late.length }) : t('ob.alertOverdue', { n: 1 }))
+            : t('ob.alertSoon'))}</span>
+          <span class="a2">${esc(label)} · ${esc(when)} · <span class="num">${usd(total)}</span></span>
+        </span>
+        <span class="ag">›</span>
+      </button>`;
   }
 
   /* ---- pick which holding paid the dividend ---- */

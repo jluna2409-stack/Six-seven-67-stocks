@@ -6,6 +6,7 @@ import { esc, usd, dateTime } from '../format.js';
 import { toast, confirmSheet, field, switchRow, selectInput } from '../ui.js';
 import { refreshFx, fxInfo } from '../fx.js';
 import { helpIndex, helpBtn } from '../help.js';
+import { autoPayDue } from '../obligations.js';
 
 export default function settingsView(host, ctx){
   function draw(){
@@ -54,6 +55,7 @@ export default function settingsView(host, ctx){
         </div>
         ${field(t('set.divMXRate'), `<input type="number" step="0.1" min="0" name="divExtraRate" value="${s.divExtraRate}" />`)}
         ${field(t('tax.tableYear'), `<input type="number" step="1" name="tblYear" value="${s.tables.year}" />`)}
+        ${switchRow(t('set.autoPayTax'), 'autoPayTax', s.autoPayTax, t('set.autoPayHelp'))}
         <details style="margin-top:6px">
           <summary class="small muted" style="cursor:pointer">${esc(t('tax.tables'))} (JSON)</summary>
           <textarea name="tables" rows="10" spellcheck="false" style="margin-top:10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px">${esc(JSON.stringify(s.tables, (k,v) => v === Infinity ? 'Infinity' : v, 1))}</textarea>
@@ -108,6 +110,7 @@ export default function settingsView(host, ctx){
         o.divUsRate = Number(g('divUsRate').value || 0);
         o.divExtraRate = Number(g('divExtraRate').value || 0);
         o.tables.year = Number(g('tblYear').value || o.tables.year);
+        o.autoPayTax = g('autoPayTax').checked;
         o.theme = g('theme').value;
         o.lang = g('lang').value;
       }, { reason:'settings' });
@@ -120,6 +123,11 @@ export default function settingsView(host, ctx){
         commit();
         if (i.name === 'lang'){ setLang(g('lang').value); ctx.rerender(); return; }
         if (i.name === 'fxAuto'){ if (g('fxAuto').checked) refreshFx({ force:true }).then(draw); else draw(); return; }
+        if (i.name === 'autoPayTax' && g('autoPayTax').checked){
+          const done = autoPayDue();
+          toast(done.length ? t('ob.autoPaid', { n: done.length }) : t('set.saved'), 'ok');
+          return;
+        }
         if (i.name === 'theme'){ ctx.applyTheme(); return; }
         if (i.name === 'apiKey') connectWs();
         toast(t('set.saved'), 'ok');

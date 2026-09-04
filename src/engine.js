@@ -174,13 +174,17 @@ export function dividend({ symbol, gross, note = '' }){
   return { net, withheld: wh };
 }
 
-export function payTax(year, amount){
+/**
+ * Settle one tax obligation. `id` is the obligation key: the plain year for the
+ * annual return ("2026"), or "div-YYYY-MM" for a monthly dividend payment.
+ */
+export function payTax(id, amount, meta = {}){
   const s = get();
   if (amount > s.cash + 1e-9) return { ok:false, error:'insufficient' };
   update(st => {
     st.cash -= amount;
-    st.taxPaid[year] = (st.taxPaid[year] || 0) + amount;
-    addTx({ type: TX.TAX, amount, year });
+    st.taxPaid[id] = (st.taxPaid[id] || 0) + amount;
+    addTx({ type: TX.TAX, amount, obligation: id, year: meta.year, note: meta.label || '' });
   }, { reason:'tax' });
   return { ok:true };
 }

@@ -151,6 +151,20 @@ export const TOPICS = {
        <p>The 10% on shares and the extra 10% on dividends sit apart, because they are <b>final</b> taxes and do not mix with the progressive tariff.</p>
        <p>The app works in dollars and SAT tariffs are in pesos, so it converts with the rate in Settings.</p>`]
   },
+  calendar: {
+    es: ['Calendario de obligaciones',
+      `No todos los impuestos se pagan al mismo tiempo. La app los separa por fecha:
+       <p><b>Declaración anual — 30 de abril del año siguiente.</b> Ahí va el 10% de tu ganancia de bolsa y el saldo de la tarifa anual sobre sueldo y dividendos. Si vendes con ganancia hoy, ese impuesto no se paga hoy: se paga hasta abril del año que entra, porque se calcula sobre la ganancia <b>anual neta</b> y el año todavía no cierra. <i>(Art. 150 LISR)</i></p>
+       <p><b>10% adicional de dividendos — día 17 del mes siguiente.</b> Éste no espera a abril: como el dividendo viene del extranjero, nadie te lo retiene en México y lo enteras tú, cada mes. <i>(Art. 142 fr. V LISR)</i></p>
+       <p><b>Los estados:</b> <i>En curso</i> significa que el ejercicio no ha cerrado y el monto todavía puede cambiar. <i>Programado</i> es que ya está definido y falta tiempo. <i>Ya casi</i> aparece 45 días antes del 30 de abril, o 10 días antes del 17. <i>Vencido</i> es que se te pasó la fecha.</p>
+       <p>Puedes activar en Ajustes que la app te lo descuente sola al llegar la fecha.</p>`],
+    en: ['Tax calendar',
+      `Not every tax is paid at the same time, so the app splits them by deadline:
+       <p><b>Annual return — 30 April of the following year.</b> It carries the 10% on your capital gains and the balance of the annual tariff on wages and dividends. Sell at a gain today and you do not pay today: you pay next April, because the tax is computed on the <b>annual net</b> gain and the year is not over. <i>(art. 150 LISR)</i></p>
+       <p><b>Extra 10% on dividends — 17th of the following month.</b> This one does not wait for April: the dividend comes from abroad, nobody withholds it in Mexico, so you file it yourself each month. <i>(art. 142 fr. V LISR)</i></p>
+       <p><b>The states:</b> <i>In progress</i> means the year has not closed and the amount can still change. <i>Scheduled</i> means it is fixed but far off. <i>Due soon</i> appears 45 days before 30 April, or 10 days before the 17th. <i>Overdue</i> means the date has passed.</p>
+       <p>You can have the app deduct it automatically when the date arrives — see Settings.</p>`]
+  },
   latent: {
     es: ['Impuesto latente',
       `Cuánto ISR pagarías <b>si vendieras todo hoy</b>, al 10% sobre tu plusvalía no realizada.

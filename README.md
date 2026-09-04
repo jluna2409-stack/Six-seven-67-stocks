@@ -36,6 +36,7 @@ También funciona tal cual en GitHub Pages, Netlify, Vercel o cualquier hosting 
 | **Resumen de tenencias** | Cuántos títulos tienes, de qué empresas o índices son, y cuánto valen en total — con el desglose entre acciones y ETFs. |
 | **Ayuda contextual** | Un botón **?** junto a cada concepto abre una explicación en lenguaje llano (qué es el TWR, por qué la plusvalía no paga impuesto, bruto vs. neto, PEPS vs. costo promedio…). Ajustes trae el índice completo con los 21 temas. |
 | **Impuestos (México)** | Ganancia de capital, dividendos del extranjero y declaración anual — detalle abajo. |
+| **Calendario fiscal** | Cada impuesto con **su propia fecha**: la declaración anual el 30 de abril del año siguiente, y el 10% adicional de dividendos el día 17 del mes siguiente. Estados *En curso / Programado / Ya casi / Vencido*, aviso en el Resumen y punto rojo en la pestaña cuando algo vence o está por vencer. Opción de que la app lo descuente sola al llegar la fecha. |
 | **Persistencia** | Todo vive en `localStorage`. Cierras, vuelves en tres meses y la simulación continúa: los depósitos programados atrasados se aplican solos al abrir. Respaldo exportable/importable en `.json` y exportación del historial a CSV. |
 
 ## Modelo fiscal implementado
@@ -44,6 +45,7 @@ También funciona tal cual en GitHub Pages, Netlify, Vercel o cualquier hosting 
 |---|---|---|
 | Ganancia por venta de acciones en bolsas reconocidas (incluye el SIC / mercados de EE. UU.) | **10% definitivo** sobre la ganancia **anual neta**. Las pérdidas netas se amortizan contra ganancias de los 10 años siguientes (encadenado año por año). | LISR art. 129 |
 | Dividendos de sociedades del extranjero | Retención de EE. UU. del **10%** (tratado, W-8BEN) + en México: acumulables a la tarifa anual **y 10% adicional definitivo**. El impuesto pagado en EE. UU. se acredita hasta el límite del ISR mexicano atribuible a ese ingreso. | LISR art. 142 fr. V y 152 |
+| **Cuándo se paga cada uno** | La ganancia de bolsa y el saldo de la tarifa anual se pagan en la **declaración anual, a más tardar el 30 de abril** del año siguiente. El **10% adicional de dividendos del extranjero no espera a abril**: se entera **el día 17 del mes siguiente** al que se cobró, porque no hay retenedor en México. | LISR art. 150 y 142 fr. V |
 | Sueldos | Retención con la **tarifa mensual** + subsidio al empleo (13.9% de la UMA mensual hasta el tope), y cuotas obrero IMSS (prestaciones en dinero, gastos médicos de pensionados, invalidez y vida, cesantía y vejez, y el excedente de 3 UMA). Reconciliación anual con la tarifa del art. 152. | LISR art. 96 y 152; LSS |
 | Plusvalía no realizada | No paga impuesto hasta la venta. La app muestra el **impuesto latente** si vendieras todo hoy. | — |
 
@@ -102,6 +104,7 @@ src/
   engine.js            posiciones, lotes, compra/venta (PEPS o promedio), TWR
   tax.js               motor fiscal mexicano (tarifas, IMSS, declaración anual)
   taxreport.js         agregación por ejercicio y amortización de pérdidas
+  obligations.js       calendario fiscal: fechas, estados, alertas y auto-pago
   scheduler.js         ingresos recurrentes y recuperación de periodos atrasados
   market.js            Finnhub REST + WebSocket, catálogo, historial
   fx.js                tipo de cambio USD/MXN actual e histórico por fecha

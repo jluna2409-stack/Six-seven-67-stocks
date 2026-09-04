@@ -4,6 +4,7 @@ import { connectWs, watch, refreshQuotes, quotes, onTick, onStatus, marketOpen, 
 import { snapshot, accrueCashInterest, deposit, totalsFor } from './engine.js';
 import { runDue } from './scheduler.js';
 import { startFx, refreshFx } from './fx.js';
+import { autoPayDue, alerts } from './obligations.js';
 import { toast, sheet, field, moneyInput, selectInput } from './ui.js';
 import { installHelp } from './help.js';
 import { esc, usd } from './format.js';
@@ -41,6 +42,19 @@ function go(tab){
   window.scrollTo({ top: 0 });
 }
 
+/** Red dot on the Taxes tab while a deadline is overdue or approaching. */
+function paintTaxDot(){
+  const btn = document.querySelector('#tabbar button[data-tab=taxes]');
+  if (!btn) return;
+  const due = alerts();
+  btn.querySelector('.tdot')?.remove();
+  if (!due.length) return;
+  const dot = document.createElement('span');
+  dot.className = 'tdot';
+  if (!due.some(o => o.status === 'overdue')) dot.style.background = 'var(--orange)';
+  btn.appendChild(dot);
+}
+
 function rerender(){
   const host = document.getElementById('view');
   if (current?.destroy) current.destroy();
@@ -48,6 +62,7 @@ function rerender(){
   applyTheme();
   document.querySelectorAll('#tabbar .tl').forEach(el => { el.textContent = t('nav.' + el.closest('button').dataset.tab); });
   current = VIEWS[currentTab](host, ctx);
+  paintTaxDot();
 }
 
 /* --------------------------- market pill -------------------------- */
@@ -124,7 +139,9 @@ async function boot(){
   // catch up on everything that happened while the app was closed
   const applied = await runDue();
   accrueCashInterest();
+  const autopaid = autoPayDue();
   if (applied.length) setTimeout(() => toast(t('cash.applied', { n: applied.length }), 'ok'), 700);
+  if (autopaid.length) setTimeout(() => toast(t('ob.autoPaid', { n: autopaid.length }), 'ok'), 1400);
 
   go(location.hash.slice(1) || 'dashboard');
   if (!get().onboarded) setTimeout(onboard, 300);
@@ -144,6 +161,7 @@ async function boot(){
   setInterval(() => {
     snapshot(quotes);
     sampleIntraday(totalsFor(get(), quotes).nw);   // keeps the intraday curve moving without a WS feed
+    paintTaxDot();                                  // a deadline can arrive while the tab stays open
   }, 60_000);
   setInterval(() => {
     const held = Object.keys(get().positions);
@@ -160,7 +178,10 @@ async function boot(){
     if (document.visibilityState !== 'visible') { persistNow(); return; }
     const a = await runDue();
     accrueCashInterest();
+    const ap = autoPayDue();
     if (a.length) toast(t('cash.applied', { n: a.length }), 'ok');
+    if (ap.length) toast(t('ob.autoPaid', { n: ap.length }), 'ok');
+    paintTaxDot();
     connectWs();
     refreshFx();
     const held = Object.keys(get().positions);

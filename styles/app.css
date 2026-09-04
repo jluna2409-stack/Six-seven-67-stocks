@@ -232,3 +232,38 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
 .hold-grid .hd{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx2);font-weight:700;padding-bottom:6px;border-bottom:1px solid var(--bg-hair)}
 .hold-grid .hn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hold-grid .ht{font-weight:700;padding-top:8px;border-top:1px solid var(--bg-hair)}
+
+/* ---------- Tax obligations & deadline alerts ---------- */
+.ob-row.ob-overdue{background:linear-gradient(90deg,color-mix(in srgb,var(--down) 13%,transparent),transparent);
+  margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:10px}
+.ob-row.ob-soon{background:linear-gradient(90deg,color-mix(in srgb,var(--orange) 12%,transparent),transparent);
+  margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:10px}
+.ob-row.ob-paid .li-v{color:var(--tx2)}
+.ob-row .li-s{white-space:normal;overflow:visible;line-height:1.4}
+.ob-row .li-t{flex-wrap:wrap}
+.badge.ob-badge-late{background:var(--down);color:#fff}
+
+.alert{
+  display:flex;align-items:center;gap:12px;border-radius:var(--radius);
+  padding:13px 14px;margin-bottom:14px;border:1px solid transparent;cursor:pointer;
+  width:100%;text-align:left;background:var(--bg-elev)
+}
+.alert .ai{font-size:19px;line-height:1;flex:0 0 auto}
+.alert .at{flex:1;min-width:0}
+.alert .a1{font-size:14.5px;font-weight:650;letter-spacing:-.01em}
+.alert .a2{font-size:12.5px;color:var(--tx2);margin-top:2px}
+.alert .ag{color:var(--tx3);font-size:19px;flex:0 0 auto}
+.alert.late{background:color-mix(in srgb,var(--down) 14%,var(--bg-elev));
+  border-color:color-mix(in srgb,var(--down) 42%,transparent)}
+.alert.late .a1{color:var(--down)}
+.alert.warn{background:color-mix(in srgb,var(--orange) 13%,var(--bg-elev));
+  border-color:color-mix(in srgb,var(--orange) 38%,transparent)}
+.alert.warn .a1{color:var(--orange)}
+.alert:active{transform:scale(.99)}
+
+.tabbar button{position:relative}
+.tabbar button .tdot{
+  position:absolute;top:3px;right:calc(50% - 16px);width:8px;height:8px;border-radius:50%;
+  background:var(--down);border:1.5px solid var(--bg)
+}
+@media(min-width:900px){ .tabbar button .tdot{top:4px;right:6px} }

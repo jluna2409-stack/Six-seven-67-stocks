@@ -3,9 +3,10 @@ import { report, activeYears, latentTax } from '../taxreport.js';
 import { totalsFor, payTax } from '../engine.js';
 import { quotes } from '../market.js';
 import { t } from '../i18n.js';
-import { usd, esc, pct, mxn, signedUsd, cls, dateLong } from '../format.js';
+import { usd, esc, pct, mxn, signedUsd, cls, dateLong, dateShort } from '../format.js';
 import { confirmSheet, toast } from '../ui.js';
 import { helpBtn } from '../help.js';
+import { obligations, daysUntil, totalOwed } from '../obligations.js';
 
 let year = new Date().getFullYear();
 
@@ -20,6 +21,10 @@ export default function taxes(host){
     if (!rep[year]) year = years[0];
     const r = rep[year];
     const T = totalsFor(st, quotes);
+    const obs = obligations(st);
+    const owed = totalOwed(st);
+    const next = obs.find(o => o.outstanding > 0.005 && o.status !== 'accruing');
+    const paidThisYear = obs.filter(o => o.year === year).reduce((a, o) => a + o.paid, 0);
 
     host.querySelector('#wrap').innerHTML = `
       <div class="card">
@@ -29,10 +34,10 @@ export default function taxes(host){
             `<button class="chip ${y===year?'active':''}" data-y="${y}">${y}</button>`).join('')}</div>
         </div>
         <div class="grid g2">
-          <div class="kpi"><div class="k">${esc(t('tax.due'))}</div><div class="v num">${usd(r ? r.totalDue : 0)}</div>
-            <div class="d">${esc(t('tax.dueDate', { y: year + 1 }))}</div></div>
+          <div class="kpi"><div class="k">${esc(t('ob.owed'))}</div><div class="v num ${owed > 0 ? 'down' : ''}">${usd(owed)}</div>
+            <div class="d">${next ? `${esc(t('ob.next'))}: ${dateShort(next.due)}` : esc(t('ob.nothingDue'))}</div></div>
           <div class="kpi"><div class="k">${esc(t('tax.effective'))}</div><div class="v num">${pct(r ? r.effectiveRate : 0, 1)}</div>
-            <div class="d">${esc(t('tax.paid'))}: ${usd(r ? r.paid : 0)}</div></div>
+            <div class="d">${esc(t('tax.paid'))}: ${usd(paidThisYear)}</div></div>
         </div>
       </div>
 
@@ -89,14 +94,48 @@ export default function taxes(host){
         <h3 class="card-title">${esc(t('tax.balance'))}</h3>
         <table class="tbl"><tbody>
           <tr><td>${esc(t('tax.capgains'))} (${pct(s.capRate,0)})</td><td class="num">${usd(r.capTax)}</td></tr>
-          <tr><td>${esc(t('tax.divExtra'))}</td><td class="num">${usd(r.divExtraTax)}</td></tr>
           <tr><td>${esc(t('tax.annual'))}</td><td class="num">${usd(Math.max(0, r.annualBalance))}</td></tr>
-          <tr><td>${esc(t('tax.paid'))}</td><td class="num up">−${usd(r.paid)}</td></tr>
+          <tr><td class="muted">${esc(t('tax.paid'))}</td><td class="num up">−${usd(r.annualPaid)}</td></tr>
         </tbody>
-        <tfoot><tr><td>${esc(t('tax.toPay'))}</td><td class="num">${usd(r.outstanding)}</td></tr></tfoot></table>
-        ${r.outstanding > 0 ? `<button class="btn" id="pay" style="margin-top:14px">${esc(t('tax.pay'))} — ${usd(r.outstanding)}</button>
-          <div class="tiny muted" style="margin-top:8px">${esc(t('tax.payHelp'))}</div>` : ''}
+        <tfoot><tr><td>${esc(t('ob.annual', { y: year }))}</td><td class="num">${usd(r.annualOutstanding)}</td></tr></tfoot></table>
+        <div class="note info" style="margin-top:12px">${esc(t('ob.annualNote'))}</div>
+        <table class="tbl" style="margin-top:14px"><tbody>
+          <tr><td>${esc(t('tax.divExtra'))}</td><td class="num">${usd(r.divExtraTax)}</td></tr>
+        </tbody></table>
+        <div class="note" style="margin-top:12px">${esc(t('ob.monthlyNote'))}</div>
       </div>`}
+
+      <div class="card">
+        <h3 class="card-title">${esc(t('ob.title'))}${helpBtn('calendar')}</h3>
+        ${obs.length ? `<div class="list">${obs.map(o => {
+          const d = daysUntil(o.due);
+          const when = o.status === 'paid' ? esc(t('ob.paid'))
+            : o.status === 'accruing' ? esc(t('ob.accruing'))
+            : d === 0 ? esc(t('ob.dueToday'))
+            : d === 1 ? esc(t('ob.dueTomorrow'))
+            : d > 0 ? esc(t('ob.daysLeft', { n: d }))
+            : esc(t('ob.daysOver', { n: -d }));
+          const badge = { paid:'ok', overdue:'', soon:'warn', upcoming:'', accruing:'' }[o.status];
+          return `<div class="list-item ob-row ob-${o.status}" style="cursor:default">
+            <div class="li-main">
+              <div class="li-t">${o.kind === 'annual'
+                ? esc(t('ob.annual', { y: o.year }))
+                : esc(t('ob.dividend', { p: o.period }))}
+                <span class="badge ${badge} ${o.status === 'overdue' ? 'ob-badge-late' : ''}">${esc(t('ob.' + o.status))}</span></div>
+              <div class="li-s">${esc(t('ob.due'))} ${dateLong(o.due)} · ${when}</div>
+            </div>
+            <div class="li-r" style="display:flex;align-items:center;gap:10px">
+              <div>
+                <div class="li-v num">${usd(o.outstanding || o.amount)}</div>
+                ${o.paid > 0 ? `<div class="li-d num up">${esc(t('ob.paid'))} ${usd(o.paid)}</div>` : ''}
+              </div>
+              ${o.outstanding > 0.005 && o.status !== 'accruing'
+                ? `<button class="btn sm" data-pay="${esc(o.id)}">${esc(t('ob.pay'))}</button>` : ''}
+            </div>
+          </div>`;
+        }).join('')}</div>` : `<div class="empty">${esc(t('ob.none'))}</div>`}
+        ${obs.some(o => o.status === 'accruing') ? `<div class="tiny muted" style="margin-top:12px;line-height:1.5">${esc(t('ob.accruingHelp'))}</div>` : ''}
+      </div>
 
       <div class="card">
         <h3 class="card-title">${esc(t('tax.estUnrealized'))}${helpBtn('latent')}</h3>
@@ -115,12 +154,16 @@ export default function taxes(host){
       </div>`;
 
     host.querySelectorAll('[data-y]').forEach(b => b.onclick = () => { year = Number(b.dataset.y); draw(); });
-    const pay = host.querySelector('#pay');
-    if (pay) pay.onclick = () => confirmSheet(t('tax.pay'), t('tax.payHelp'), () => {
-      const res = payTax(year, rep[year].outstanding);
-      if (!res.ok) toast(t('cash.insufficient'), 'err'); else toast(t('act.done'), 'ok');
-      draw();
-    }, { danger:false });
+    host.querySelectorAll('[data-pay]').forEach(b => b.onclick = () => {
+      const o = obs.find(x => x.id === b.dataset.pay);
+      if (!o) return;
+      const label = o.kind === 'annual' ? t('ob.annual', { y: o.year }) : t('ob.dividend', { p: o.period });
+      confirmSheet(`${t('ob.pay')} ${usd(o.outstanding)}`, `${label} · ${t('ob.due')} ${dateLong(o.due)}`, () => {
+        const res = payTax(o.id, o.outstanding, { year: o.year, label });
+        toast(res.ok ? t('act.done') : t('cash.insufficient'), res.ok ? 'ok' : 'err');
+        draw();
+      }, { danger:false, yesLabel: t('ob.pay') });
+    });
   }
 
   draw();

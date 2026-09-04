@@ -152,7 +152,13 @@ export function annualSummary(y, cfg){
 
   const credits = y.salaryIsrWithheld + foreignCredit;
   const annualBalance = isrAnnual - credits;              // >0 payable, <0 refundable
-  const totalDue = Math.max(0, annualBalance) + divExtraTax + capTax;
+
+  // Two different deadlines: the annual return is filed by 30 April of the
+  // following year (art. 150), while the extra 10% on foreign dividends is a
+  // definitive tax the individual pays by the 17th of the following month
+  // (art. 142 fr. V) — it does NOT wait for the annual return.
+  const annualDue = Math.max(0, annualBalance) + capTax;
+  const totalDue = annualDue + divExtraTax;
   const totalTaxBorne = isrAnnual + divExtraTax + capTax + y.divUsWithheld - foreignCredit;
   const totalIncome = accumUsd + Math.max(0, netGainBefore);
 
@@ -162,7 +168,7 @@ export function annualSummary(y, cfg){
     accumUsd, accumMxn, isrAnnual, marginal: marginalRate(accumMxn, T.isrAnnual),
     divGross: y.divGross, divUsWithheld: y.divUsWithheld, foreignCredit, creditLimit, divExtraTax,
     salaryGross: y.salaryGross, salaryIsrWithheld: y.salaryIsrWithheld,
-    credits, annualBalance, totalDue,
+    credits, annualBalance, annualDue, totalDue,
     effectiveRate: totalIncome > 0 ? totalTaxBorne / totalIncome * 100 : 0
   };
 }

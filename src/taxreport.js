@@ -42,8 +42,10 @@ export function report(state = get()){
     const inp = yearInputs(state, y);
     const sum = annualSummary({ ...inp, carryIn: carry }, cfg);
     sum.year = y;
-    sum.paid = state.taxPaid[y] || 0;
-    sum.outstanding = Math.max(0, sum.totalDue - sum.paid);
+    sum.annualPaid = state.taxPaid[String(y)] || 0;
+    sum.annualOutstanding = Math.max(0, sum.annualDue - sum.annualPaid);
+    sum.paid = sum.annualPaid;
+    sum.outstanding = sum.annualOutstanding;
     out[y] = sum;
     carry = sum.carryOut;
   }
