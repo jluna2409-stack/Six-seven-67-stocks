@@ -1,6 +1,6 @@
 import { get, TX } from '../store.js';
 import { t } from '../i18n.js';
-import { usd, num, esc, dateTime, cls, signedUsd } from '../format.js';
+import { usd, num, esc, dateTime, cls, signedUsd, mxn } from '../format.js';
 
 let filter = 'all';
 
@@ -37,6 +37,7 @@ export default function history(host){
       const inflow = [TX.DEPOSIT, TX.SALARY, TX.SELL, TX.DIVIDEND, TX.INTEREST].includes(x.type);
       let sub = dateTime(x.ts);
       if (x.type === TX.BUY || x.type === TX.SELL) sub += ` · ${num(x.qty,4)} × ${usd(x.price)}` + (x.fee ? ` · ${t('tr.fee')} ${usd(x.fee)}` : '');
+      if (x.type === TX.SALARY && x.srcCurrency === 'MXN') sub += ` · ${mxn(x.srcAmount)} @ ${Number(x.fx).toFixed(4)}`;
       if (x.type === TX.SALARY && x.isr) sub += ` · ${t('cash.isrRet')} ${usd(x.isr)} · ${t('cash.imss')} ${usd(x.imss)}`;
       if (x.type === TX.DIVIDEND) sub += ` · ${t('tax.divUS')} ${usd(x.withheld || 0)}`;
       if (x.note) sub += ` · ${esc(x.note)}`;

@@ -3,7 +3,7 @@ import { deposit, withdraw } from '../engine.js';
 import { createRecurring, previewRun, toggleRecurring, deleteRecurring, runDue, FREQS } from '../scheduler.js';
 import { salaryNet } from '../tax.js';
 import { t } from '../i18n.js';
-import { usd, esc, dateLong, dayKey } from '../format.js';
+import { usd, esc, dateLong, dayKey, mxn } from '../format.js';
 import { sheet, toast, field, moneyInput, selectInput, confirmSheet } from '../ui.js';
 import { helpBtn } from '../help.js';
 
@@ -54,13 +54,16 @@ export default function cash(host){
       return `<div class="list-item" style="cursor:default;flex-wrap:wrap">
         <div class="li-main">
           <div class="li-t">${esc(r.name || t('cash.salary'))}
-            <span class="badge ${r.active?'ok':'warn'}">${esc(r.active ? t('cash.active') : t('cash.paused'))}</span></div>
-          <div class="li-s">${esc(FREQ_LABEL()[r.freq])} · ${esc(t('cash.next'))}: ${dateLong(r.nextTs)}</div>
+            <span class="badge ${r.active?'ok':'warn'}">${esc(r.active ? t('cash.active') : t('cash.paused'))}</span>
+            ${r.currency === 'MXN' ? `<span class="badge etf">${esc(t('cash.pegged'))}</span>` : ''}</div>
+          <div class="li-s">${esc(FREQ_LABEL()[r.freq])} · ${dateLong(r.nextTs)}</div>
         </div>
         <div class="li-r" style="display:flex;align-items:center;gap:8px">
           <div>
             <div class="li-v num">${usd(p.net)}</div>
-            ${r.gross ? `<div class="li-d num muted">${esc(t('cash.gross')).split(' ')[0]} ${usd(p.gross)}</div>` : ''}
+            <div class="li-d num muted">${r.currency === 'MXN'
+              ? `${mxn(r.amount)} ${esc(r.gross ? t('cash.gross').split(' ')[0].toLowerCase() : t('cash.net').split(' ')[0].toLowerCase())}`
+              : (r.gross ? `${esc(t('cash.gross').split(' ')[0])} ${usd(p.gross)}` : '')}</div>
           </div>
           <button class="icon-btn" data-tog="${r.id}" title="${esc(r.active ? t('cash.pause') : t('cash.resume'))}">${r.active ? '❚❚' : '▶'}</button>
           <button class="icon-btn" data-del="${r.id}" title="${esc(t('act.delete'))}">✕</button>
@@ -171,14 +174,13 @@ export default function cash(host){
         <div class="row"><span class="muted small">${esc(t('cash.netPreview'))}</span><span class="num" id="pv" style="font-weight:700">${usd(0)}</span></div>
         <div class="row tiny" style="margin-top:6px"><span class="muted">${esc(t('cash.perYear'))}</span><span class="num muted" id="pvy">${usd(0)}</span></div>
       </div>
-      <div class="tiny muted" style="margin:-6px 0 14px">${esc(t('cash.inMxn'))} 1 USD = ${get().settings.fx} MXN</div>
+      <div class="tiny muted" style="margin:-6px 0 14px" id="curnote"></div>
       <button class="btn" id="go">${esc(t('act.add'))}</button>`,
     onMount(el, close){
       const s = get();
-      const amountUsd = () => {
-        const raw = Number(el.querySelector('[name=a]').value || 0);
-        return el.querySelector('[name=cur]').value === 'MXN' ? raw / s.settings.fx : raw;
-      };
+      const cur = () => el.querySelector('[name=cur]').value;
+      const rawAmount = () => Number(el.querySelector('[name=a]').value || 0);
+      const amountUsd = () => cur() === 'MXN' ? rawAmount() / get().settings.fx : rawAmount();
       const pv = () => {
         const a = amountUsd();
         const f = el.querySelector('[name=f]').value;
@@ -188,21 +190,28 @@ export default function cash(host){
         el.querySelector('#pv').textContent = usd(r.net);
         el.querySelector('#pvy').textContent = usd(r.net * per);
       };
-      el.querySelectorAll('input,select').forEach(i => { i.oninput = pv; i.onchange = pv; });
-      el.querySelector('#go').onclick = () => {
-        const a = amountUsd();
-        if (a <= 0) return;
+      const note = () => {
+        el.querySelector('#curnote').innerHTML = cur() === 'MXN'
+          ? `${esc(t('cash.pegHelp'))} 1 USD = ${get().settings.fx} MXN`
+          : esc(t('cash.pegUsdHelp'));
+      };
+      el.querySelectorAll('input,select').forEach(i => { i.oninput = () => { pv(); note(); }; i.onchange = () => { pv(); note(); }; });
+      note();
+      el.querySelector('#go').onclick = async () => {
+        const a = rawAmount();
+        if (a <= 0 || amountUsd() <= 0) return;
         const d = el.querySelector('[name=d]').value || dayKey();
         const [y, m, dd] = d.split('-').map(Number);
         createRecurring({
           name: el.querySelector('[name=nm]').value,
           amount: a,
+          currency: cur(),
           gross: el.querySelector('[name=g]').value === 'gross',
           freq: el.querySelector('[name=f]').value,
           startTs: new Date(y, m - 1, dd, 9, 0, 0).getTime()
         });
         // a back-dated start date should pay out its missed periods right away
-        const applied = runDue();
+        const applied = await runDue();
         toast(applied.length ? t('cash.applied', { n: applied.length }) : t('act.done'), 'ok');
         close(); draw();
       };
@@ -211,7 +220,7 @@ export default function cash(host){
 
   host.addEventListener('click', e => {
     const tog = e.target.closest('[data-tog]');
-    if (tog){ toggleRecurring(tog.dataset.tog); runDue(); draw(); return; }
+    if (tog){ toggleRecurring(tog.dataset.tog); runDue().then(draw); draw(); return; }
     const del = e.target.closest('[data-del]');
     if (del){
       confirmSheet(t('act.delete'), t('cash.recurring'), () => { deleteRecurring(del.dataset.del); draw(); });

@@ -122,7 +122,7 @@ async function boot(){
   onStatus(paintStatus);
 
   // catch up on everything that happened while the app was closed
-  const applied = runDue();
+  const applied = await runDue();
   accrueCashInterest();
   if (applied.length) setTimeout(() => toast(t('cash.applied', { n: applied.length }), 'ok'), 700);
 
@@ -156,9 +156,9 @@ async function boot(){
     paintStatus({ state: marketOpen() ? cur : 'closed' });
   }, 30_000);
 
-  document.addEventListener('visibilitychange', () => {
+  document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState !== 'visible') { persistNow(); return; }
-    const a = runDue();
+    const a = await runDue();
     accrueCashInterest();
     if (a.length) toast(t('cash.applied', { n: a.length }), 'ok');
     connectWs();

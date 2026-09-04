@@ -35,6 +35,7 @@ export const DEFAULT_STATE = () => ({
   realized: [],         // [{ts,symbol,qty,proceeds,cost,gain}]
   snapshots: [],        // [{d,nw,cash,invested,contrib}]
   taxPaid: {},          // year -> USD paid
+  fxHistory: {},        // 'YYYY-MM-DD' -> USD/MXN, for back-dated conversions
   lastRun: 0,           // last time scheduler ran
   lastInterestDay: dayKey()
 });
@@ -65,6 +66,9 @@ function migrate(s){
   out.settings.tables = { ...DEFAULT_TABLES, ...(s.settings?.tables || {}) };
   for (const k of ['positions','taxPaid']) out[k] = { ...(s[k] || {}) };
   for (const k of ['transactions','recurring','realized','snapshots']) out[k] = Array.isArray(s[k]) ? s[k] : [];
+  out.fxHistory = { ...(s.fxHistory || {}) };
+  // schedules created before amounts carried a currency were stored in USD
+  out.recurring = out.recurring.map(r => ({ ...r, currency: r.currency || 'USD' }));
   out.schema = SCHEMA;
   return out;
 }

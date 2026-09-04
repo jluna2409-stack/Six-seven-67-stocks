@@ -25,7 +25,9 @@ export function num(n, dp = 4){
 }
 export function mxn(n){
   if (!isFinite(n)) n = 0;
-  return new Intl.NumberFormat('es-MX', { style:'currency', currency:'MXN', maximumFractionDigits:2 }).format(n);
+  return new Intl.NumberFormat('es-MX', {
+    style:'currency', currency:'MXN', currencyDisplay:'code', maximumFractionDigits:2
+  }).format(n);
 }
 export function dateShort(ts){
   return new Date(ts).toLocaleDateString(loc(), { day:'numeric', month:'short' });

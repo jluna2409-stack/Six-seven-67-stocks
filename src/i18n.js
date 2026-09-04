@@ -46,7 +46,7 @@ export const DICT = {
     'cash.deposited':'Depósito registrado','cash.withdrawn':'Retiro registrado','cash.insufficient':'Saldo insuficiente',
     'cash.simSalary':'Simular salario','cash.netPreview':'Neto estimado','cash.isrRet':'ISR retenido',
     'cash.imss':'IMSS trabajador','cash.subsidy':'Subsidio al empleo','cash.perYear':'al año',
-    'cash.currency':'Moneda del monto','cash.inMxn':'Se convierte a USD con el tipo de cambio de Ajustes.','cash.yield':'Rendimiento anual del efectivo','cash.interest':'Interés','cash.name':'Nombre',
+    'cash.currency':'Moneda del monto','cash.inMxn':'Se convierte a USD con el tipo de cambio de Ajustes.','cash.pegged':'anclado a pesos','cash.pegHelp':'El monto queda fijo en pesos: cada depósito se convierte con el tipo de cambio de ese día, así que si el peso se mueve sigues cobrando lo mismo en pesos. Los depósitos atrasados usan el tipo de cambio que aplicaba en su fecha.','cash.pegUsdHelp':'El monto queda fijo en dólares, sin importar cómo se mueva el peso.','cash.yield':'Rendimiento anual del efectivo','cash.interest':'Interés','cash.name':'Nombre',
 
     'tax.title':'Impuestos (México)','tax.year':'Ejercicio','tax.capgains':'Ganancia de capital (bolsa)',
     'tax.capgainsHelp':'Art. 129 LISR: 10% definitivo sobre la ganancia anual neta por enajenación de acciones en bolsas reconocidas (incluye el SIC). Las pérdidas se amortizan 10 años.',
@@ -157,7 +157,7 @@ export const DICT = {
     'cash.deposited':'Deposit recorded','cash.withdrawn':'Withdrawal recorded','cash.insufficient':'Insufficient balance',
     'cash.simSalary':'Simulate salary','cash.netPreview':'Estimated net','cash.isrRet':'Income tax withheld',
     'cash.imss':'Social security (worker)','cash.subsidy':'Employment subsidy','cash.perYear':'per year',
-    'cash.currency':'Amount currency','cash.inMxn':'Converted to USD using the exchange rate from Settings.','cash.yield':'Annual yield on cash','cash.interest':'Interest','cash.name':'Name',
+    'cash.currency':'Amount currency','cash.inMxn':'Converted to USD using the exchange rate from Settings.','cash.pegged':'pegged to pesos','cash.pegHelp':'The amount stays fixed in pesos: each deposit converts at that day\u2019s rate, so you keep earning the same in pesos as the peso moves. Missed deposits use the rate that applied on their own date.','cash.pegUsdHelp':'The amount stays fixed in dollars, whatever the peso does.','cash.yield':'Annual yield on cash','cash.interest':'Interest','cash.name':'Name',
 
     'tax.title':'Taxes (Mexico)','tax.year':'Tax year','tax.capgains':'Capital gains (listed shares)',
     'tax.capgainsHelp':'Art. 129 LISR: flat 10% on the annual net gain from selling shares on recognized exchanges (incl. Mexico’s SIC). Losses carry forward 10 years.',

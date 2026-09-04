@@ -30,7 +30,8 @@ También funciona tal cual en GitHub Pages, Netlify, Vercel o cualquier hosting 
 | **Catálogo** | 28,224 instrumentos de EE. UU. — 18,410 acciones y **6,471 ETFs / fondos indexados** (VOO, SPY, QQQ, VTI, SCHD…). Búsqueda por símbolo o nombre, con filtro Acciones / ETFs. |
 | **Patrimonio** | Net worth, efectivo, invertido, ganancia total (vs. aportado neto), plusvalía no realizada, ganancia realizada, rendimiento TWR. |
 | **Gráficas** | Curva de patrimonio con área degradada, línea base y *scrubber* táctil (HOY / 1S / 1M / 3M / 6M / 1A / TODO), dona de distribución y barras de P/G por posición. |
-| **Efectivo** | Depósitos y retiros manuales, retiro marcado como "de emergencia", y **ingresos recurrentes** (semanal, catorcenal, quincenal, mensual). Si capturas el sueldo **bruto** se calcula ISR mensual + IMSS y solo se deposita el neto. Puedes capturar el monto en **MXN o USD**. |
+| **Efectivo** | Depósitos y retiros manuales, retiro marcado como "de emergencia", y **ingresos recurrentes** (semanal, catorcenal, quincenal, mensual). Si capturas el sueldo **bruto** se calcula ISR mensual + IMSS y solo se deposita el neto. |
+| **Sueldo anclado a pesos** | El monto recurrente se guarda **en la moneda que capturas**. En pesos queda anclado ahí: cada depósito se convierte con el tipo de cambio **de su propio día**, así que un sueldo de 22,000 MXN sigue valiendo 22,000 MXN aunque el dólar se mueva, y el ISR retenido en pesos es idéntico cada mes. Los periodos atrasados se valúan con el tipo de cambio que aplicaba en su fecha, no con el de hoy. |
 | **Dividendos** | Sección propia que aísla **cuánto has ganado solo con dividendos**: neto en tu bolsillo, retención de EE. UU., rendimiento sobre costo, promedio mensual, ritmo anual y desglose por posición (este año o histórico). |
 | **Resumen de tenencias** | Cuántos títulos tienes, de qué empresas o índices son, y cuánto valen en total — con el desglose entre acciones y ETFs. |
 | **Ayuda contextual** | Un botón **?** junto a cada concepto abre una explicación en lenguaje llano (qué es el TWR, por qué la plusvalía no paga impuesto, bruto vs. neto, PEPS vs. costo promedio…). Ajustes trae el índice completo con los 21 temas. |
@@ -57,6 +58,20 @@ quedar desfasadas.
 > no se modelan aguinaldo, PTU, deducciones personales ni el régimen de intereses
 > reales.
 
+### Limitación conocida: la ganancia cambiaria
+
+Los sueldos ya usan el tipo de cambio de su propia fecha, pero **las operaciones de
+bolsa todavía no**: la cartera vive en dólares y la ganancia de capital se calcula
+en dólares, mientras que el SAT la mide **en pesos**. La diferencia importa:
+
+> Compras 10 VOO a $600 = $6,000 USD con el dólar a **17.00** → costo real 102,000 MXN.
+> Un año después vendes al **mismo** precio con el dólar a **20.00** → recibes 120,000 MXN.
+> En dólares ganaste $0 y la app no cobra ISR; en pesos ganaste 18,000 y el SAT sí cobraría.
+
+Para el número exacto de la declaración falta guardar el tipo de cambio de cada compra
+y cada venta y calcular la ganancia en pesos. La infraestructura ya existe
+(`rateOn()` en `src/fx.js` resuelve el tipo de cambio de cualquier fecha).
+
 ## Límites de la API y cómo se resolvieron
 
 La API key de Finnhub incluida es de **plan gratuito**. Al probar los endpoints:
@@ -69,7 +84,7 @@ La API key de Finnhub incluida es de **plan gratuito**. Al probar los endpoints:
 | `/stock/profile2` | ✅ 200 | Metadatos del emisor. |
 | `/stock/candle` (histórico) | ❌ **403 — de pago** | La app **construye su propio historial**: guarda una foto del patrimonio cada día que la abres, más una curva intradía en vivo. Opcionalmente puedes pegar una API key **gratuita de Alpha Vantage** en Ajustes para descargar el histórico de precios pasado. |
 | `/stock/dividend` | ❌ **403 — de pago** | Los dividendos se **capturan a mano** (desde el detalle de la posición o desde la sección Dividendos); la app aplica la retención de EE. UU., los abona al efectivo y los suma a la declaración anual. |
-| `/forex/rates` | ❌ **403 — de pago** | El tipo de cambio USD/MXN se toma de proveedores públicos gratuitos con CORS abierto (`open.er-api.com`, con `currency-api` de respaldo). Se actualiza al abrir la app y cada 6 horas. La cotización es **diaria**, igual que el tipo de cambio FIX de Banxico —que es el que aplica para efectos fiscales—, así que no existe un "tick a tick" que tenga sentido fiscal aquí. Se puede apagar y fijar a mano. |
+| `/forex/rates` | ❌ **403 — de pago** | El tipo de cambio USD/MXN se toma de proveedores públicos gratuitos con CORS abierto (`open.er-api.com` para el actual, `currency-api` para el **histórico por fecha**). Se actualiza al abrir la app y cada 6 horas. La cotización es **diaria**, igual que el tipo de cambio FIX de Banxico —que es el que aplica para efectos fiscales—, así que no existe un "tick a tick" que tenga sentido fiscal aquí. Se puede apagar y fijar a mano. Las consultas históricas se cachean y tienen tope de 4 s: si la red falla, se usa el tipo de cambio actual y la app no se traba. |
 
 > La key vive en el cliente, así que cualquiera que abra la página puede leerla:
 > es inevitable en una app sin servidor. Si la publicas, usa una key desechable o
@@ -89,7 +104,7 @@ src/
   taxreport.js         agregación por ejercicio y amortización de pérdidas
   scheduler.js         ingresos recurrentes y recuperación de periodos atrasados
   market.js            Finnhub REST + WebSocket, catálogo, historial
-  fx.js                tipo de cambio USD/MXN en vivo (proveedores gratuitos)
+  fx.js                tipo de cambio USD/MXN actual e histórico por fecha
   help.js              ayuda contextual bilingüe (21 temas)
   charts.js            SVG: línea con scrubber, dona, barras
   i18n.js  format.js  ui.js
@@ -100,5 +115,6 @@ src/
 
 - Backfill automático del histórico de precios (requiere plan de pago o key de Alpha Vantage).
 - Aportaciones automáticas programadas a un ETF (DCA), no solo al efectivo.
+- Ganancia cambiaria en las operaciones de bolsa (ver limitación conocida arriba).
 - Régimen de intereses reales para el rendimiento del efectivo.
 - Dividendos automáticos por calendario en vez de captura manual (endpoint de pago).

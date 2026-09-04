@@ -166,25 +166,27 @@ export const TOPICS = {
        <p>• <b>ISR</b> con la tarifa mensual del art. 96, menos el subsidio al empleo si tu sueldo está por debajo del tope.<br>
           • <b>IMSS trabajador</b>: prestaciones en dinero, gastos médicos de pensionados, invalidez y vida, cesantía y vejez, y el excedente de 3 UMA.</p>
        <p>Solo el sueldo capturado en bruto entra a la declaración anual, porque es del que la app conoce la retención.</p>
-       <p>Puedes capturar el monto en <b>pesos o dólares</b>: se convierte con el tipo de cambio de Ajustes.</p>`],
+       <p>Puedes capturar el monto en <b>pesos o dólares</b>. En pesos queda anclado: cada depósito usa el tipo de cambio de su propio día.</p>`],
     en: ['Gross vs. net salary',
       `Choose <b>net</b> and the app deposits exactly what you type — what already lands in your account.
        <p>Choose <b>gross</b> and it computes Mexican payroll deductions, depositing only the net:</p>
        <p>• <b>Income tax</b> under the art. 96 monthly tariff, less the employment subsidy if you are below the cap.<br>
           • <b>Worker social security</b>: cash benefits, retiree medical, disability and life, severance and old age, and the excess over 3 UMA.</p>
        <p>Only gross-entered salary feeds the annual return, since that is where the app knows the withholding.</p>
-       <p>You can enter the amount in <b>pesos or dollars</b>; it converts with the rate in Settings.</p>`]
+       <p>You can enter the amount in <b>pesos or dollars</b>. In pesos it stays pegged: each deposit uses its own day's rate.</p>`]
   },
   recurring: {
     es: ['Ingresos recurrentes',
       `Programa tu sueldo (o cualquier aportación periódica) y la app lo deposita sola.
        <p><b>Lo importante:</b> no necesitas tener la app abierta. Si la cierras dos meses, al volver a abrirla se aplican <b>todos los depósitos atrasados</b> de golpe, con su fecha correcta, y el historial queda como si nunca te hubieras ido.</p>
        <p>Puedes poner una fecha de inicio en el pasado para rellenar meses anteriores.</p>
+       <p><b>Pesos o dólares:</b> el monto se guarda en la moneda que elijas. Si lo capturas en <b>pesos</b>, queda anclado ahí: cada depósito se convierte con el tipo de cambio <b>de ese día</b>, así que un sueldo de 22,000 MXN sigue siendo 22,000 MXN aunque el dólar se mueva. Los depósitos atrasados se valúan con el tipo de cambio que realmente aplicaba en su fecha, no con el de hoy.</p>
        <p>Para meter dinero de golpe una sola vez, usa <b>Depositar</b> en lugar de un recurrente.</p>`],
     en: ['Recurring income',
       `Schedule your salary (or any periodic contribution) and the app deposits it for you.
        <p><b>The point:</b> you do not need the app open. Close it for two months and every <b>missed deposit</b> is applied on reopen, dated correctly, as if you had never left.</p>
        <p>You can set a start date in the past to backfill earlier months.</p>
+       <p><b>Pesos or dollars:</b> the amount is stored in the currency you pick. Enter it in <b>pesos</b> and it stays pegged there: each deposit converts at <b>that day's</b> rate, so a 22,000 MXN salary stays 22,000 MXN however the dollar moves. Backfilled deposits are valued at the rate that actually applied on their own date, not today's.</p>
        <p>For a one-time lump sum, use <b>Deposit</b> instead of a recurring entry.</p>`]
   },
   commission: {
