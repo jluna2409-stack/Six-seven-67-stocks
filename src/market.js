@@ -165,7 +165,7 @@ export async function refreshCatalog(){
   const KEEP = new Set(['Common Stock','ETP','ADR','REIT','Closed-End Fund','Foreign Sh.','Open-End Fund','Mutual Fund','MLP','Royalty Trst','Ltd Part','NY Reg Shrs','GDR','Stapled Security','Tracking Stk']);
   const seen = new Set(), rows = [];
   for (const x of arr){
-    if (!x.symbol || !KEEP.has(x.type) || /[.\/^]/.test(x.symbol) || seen.has(x.symbol)) continue;
+    if (!x.symbol || !KEEP.has(x.type) || /[\/^]/.test(x.symbol) || seen.has(x.symbol)) continue;
     seen.add(x.symbol);
     rows.push([x.symbol, String(x.description || '').replace(/\s+/g,' ').trim(), x.type, x.mic || '']);
   }
