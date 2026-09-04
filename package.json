@@ -1,0 +1,10 @@
+{
+  "name": "bolsa-sim",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Long-term stock investing simulator with real-time prices and the Mexican tax regime",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "serve": "npx --yes serve ."
+  }
+}
