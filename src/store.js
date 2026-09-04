@@ -41,6 +41,8 @@ export const DEFAULT_STATE = () => ({
   divHistory: {},       // SYM -> announced dividends from Alpha Vantage
   avLimitedUntil: 0,    // provider daily cap hit; do not ask again before this
   lastDivScan: '',      // day key of the last automatic dividend scan
+  divPending: [],       // dividends found and not yet recorded
+  divUpcoming: null,    // the next announced payment, for information
   fxHistory: {},        // 'YYYY-MM-DD' -> USD/MXN, for back-dated conversions
   lastRun: 0,           // last time scheduler ran
   lastInterestDay: dayKey()

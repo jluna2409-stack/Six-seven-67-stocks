@@ -10,7 +10,7 @@ import { sheet, toast } from '../ui.js';
 import { openDividend } from './tradesheet.js';
 import { alerts, daysUntil } from '../obligations.js';
 import { mark, bestName } from '../instrument.js';
-import { scanDividends, recordAll, recordDetected } from '../dividends.js';
+import { scanDividends, recordAll, recordDetected, alreadyRecorded } from '../dividends.js';
 
 const RANGES = [['1D',1],['1W',7],['1M',30],['3M',90],['6M',180],['1Y',365],['ALL',1e6]];
 let range = localStorage.getItem('bolsa-sim/range') || '1M';
@@ -298,17 +298,70 @@ export default function dashboard(host){
   }
 
   /* ---- look up announced dividends and offer the ones you earned ---- */
+
+  /** Draws the banner from data already in hand; never touches the network. */
+  function paintScan(pending, upcoming){
+    const box = $('divscan');
+    const st = get();
+    const live = (pending || []).filter(d => !alreadyRecorded(st, d.symbol, d.exDate));
+
+    if (!live.length){
+      box.innerHTML = upcoming
+        ? `<div class="note info" style="margin-bottom:14px">${esc(t('dv.none'))} · ${esc(t('dv.upcoming'))}: <b>${esc(upcoming.symbol)}</b> ${usd(upcoming.gross)} — ${esc(t('dv.willPay'))} ${dateLong(new Date(upcoming.payDate + 'T12:00:00'))}</div>`
+        : '';
+      return;
+    }
+
+    const total = live.reduce((a, d) => a + d.gross, 0);
+    box.innerHTML = `
+      <div class="card tight" style="background:color-mix(in srgb,var(--up) 12%,var(--bg-elev2));border:1px solid color-mix(in srgb,var(--up) 35%,transparent);margin-bottom:14px">
+        <div class="row" style="margin-bottom:10px">
+          <strong>${esc(live.length > 1 ? t('dv.foundN', { n: live.length }) : t('dv.found', { n: 1 }))}</strong>
+          <span class="num up" style="font-weight:700">${usd(total)}</span>
+        </div>
+        <div class="list">${live.map((d, i) => `
+          <div class="list-item" style="cursor:default;padding:9px 0">
+            <div class="li-main">
+              <div class="li-t">${esc(d.symbol)}</div>
+              <div class="li-s">${usd(d.perShare)} ${esc(t('dv.perShare'))} × ${num(d.qty, 4)} · ${esc(t('dv.paidOn'))} ${dateLong(new Date(d.payDate + 'T12:00:00'))}</div>
+            </div>
+            <div class="li-r" style="display:flex;align-items:center;gap:8px">
+              <div class="li-v num">${usd(d.gross)}</div>
+              <button class="btn sm" data-divone="${i}">+</button>
+            </div>
+          </div>`).join('')}</div>
+        <button class="btn" data-divall style="margin-top:12px">${esc(t('dv.recordAll'))} — ${usd(total)}</button>
+      </div>`;
+
+    box.querySelector('[data-divall]').onclick = () => {
+      const n = recordAll(live);
+      toast(t('dv.recorded', { n }), 'ok');
+      draw();
+      paintScan(get().divPending, get().divUpcoming);
+    };
+    box.querySelectorAll('[data-divone]').forEach(b => b.onclick = () => {
+      recordDetected(live[Number(b.dataset.divone)]);
+      toast(t('act.done'), 'ok');
+      draw();
+      paintScan(get().divPending, get().divUpcoming);
+    });
+  }
+
   async function runScan({ quiet = false } = {}){
     const box = $('divscan');
     if (!get().settings.avKey){
       box.innerHTML = quiet ? '' : `<div class="note" style="margin-bottom:14px">${esc(t('dv.needKey'))}</div>`;
       return;
     }
+
     // The free tier allows 25 requests a day and each position costs one, so the
-    // automatic sweep runs once a day; the button always forces a fresh look.
+    // silent sweep runs once a day and otherwise redraws what it already found.
     if (quiet){
-      if (Date.now() < (get().avLimitedUntil || 0)){ box.innerHTML = ''; return; }
-      if (get().lastDivScan === dayKey()){ box.innerHTML = ''; return; }
+      const capped = Date.now() < (get().avLimitedUntil || 0);
+      if (capped || get().lastDivScan === dayKey()){
+        paintScan(get().divPending, get().divUpcoming);
+        return;
+      }
     }
     if (scanning) return;
     scanning = true;
@@ -326,48 +379,7 @@ export default function dashboard(host){
       box.innerHTML = quiet ? '' : `<div class="note" style="margin-bottom:14px">${esc(t('dv.limit'))}</div>`;
       return;
     }
-    if (!scan.pending.length){
-      const next = scan.upcoming[0];
-      box.innerHTML = quiet && !next ? ''
-        : `<div class="note info" style="margin-bottom:14px">${esc(t('dv.none'))}${next
-            ? ` · ${esc(t('dv.upcoming'))}: <b>${esc(next.symbol)}</b> ${usd(next.gross)} — ${esc(t('dv.willPay'))} ${dateLong(new Date(next.payDate + 'T12:00:00'))}`
-            : ''}</div>`;
-      return;
-    }
-
-    const total = scan.pending.reduce((a, d) => a + d.gross, 0);
-    box.innerHTML = `
-      <div class="card tight" style="background:color-mix(in srgb,var(--up) 12%,var(--bg-elev2));border:1px solid color-mix(in srgb,var(--up) 35%,transparent);margin-bottom:14px">
-        <div class="row" style="margin-bottom:10px">
-          <strong>${esc(scan.pending.length > 1
-            ? t('dv.foundN', { n: scan.pending.length })
-            : t('dv.found', { n: 1 }))}</strong>
-          <span class="num up" style="font-weight:700">${usd(total)}</span>
-        </div>
-        <div class="list">${scan.pending.map((d, i) => `
-          <div class="list-item" style="cursor:default;padding:9px 0">
-            <div class="li-main">
-              <div class="li-t">${esc(d.symbol)}</div>
-              <div class="li-s">${usd(d.perShare)} ${esc(t('dv.perShare'))} × ${num(d.qty, 4)} · ${esc(t('dv.paidOn'))} ${dateLong(new Date(d.payDate + 'T12:00:00'))}</div>
-            </div>
-            <div class="li-r" style="display:flex;align-items:center;gap:8px">
-              <div class="li-v num">${usd(d.gross)}</div>
-              <button class="btn sm" data-divone="${i}">+</button>
-            </div>
-          </div>`).join('')}</div>
-        <button class="btn" data-divall style="margin-top:12px">${esc(t('dv.recordAll'))} — ${usd(total)}</button>
-      </div>`;
-
-    box.querySelector('[data-divall]').onclick = () => {
-      const n = recordAll(scan.pending);
-      toast(t('dv.recorded', { n }), 'ok');
-      draw(); runScan({ quiet:true });
-    };
-    box.querySelectorAll('[data-divone]').forEach(b => b.onclick = () => {
-      recordDetected(scan.pending[Number(b.dataset.divone)]);
-      toast(t('act.done'), 'ok');
-      draw(); runScan({ quiet:true });
-    });
+    paintScan(scan.pending, scan.upcoming[0] || null);
   }
 
   /* ---- pick which holding paid the dividend ---- */

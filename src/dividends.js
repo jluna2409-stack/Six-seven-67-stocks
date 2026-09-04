@@ -6,7 +6,7 @@
  * you held the shares before the ex-dividend date — then offers them for one
  * click, or records them outright when the user enabled that.
  */
-import { get, settings, TX } from './store.js';
+import { get, settings, update, TX } from './store.js';
 import { fetchDividendHistory } from './market.js';
 import { dividend } from './engine.js';
 import { dayKey } from './format.js';
@@ -23,7 +23,7 @@ export function sharesOn(state, symbol, dateMs){
 }
 
 /** True if this payment is already in the ledger (auto-recorded or typed by hand). */
-function alreadyRecorded(state, symbol, exDate){
+export function alreadyRecorded(state, symbol, exDate){
   const ex = new Date(exDate + 'T12:00:00').getTime();
   return state.transactions.some(t => {
     if (t.type !== TX.DIVIDEND || t.symbol !== symbol) return false;
@@ -69,6 +69,11 @@ export async function scanDividends(state = get(), { force = false } = {}){
   }
   out.pending.sort((a, b) => a.payDate.localeCompare(b.payDate));
   out.upcoming.sort((a, b) => a.payDate.localeCompare(b.payDate));
+  // Kept so the banner survives navigation: re-rendering must not need the network.
+  update(st => {
+    st.divPending = out.pending;
+    st.divUpcoming = out.upcoming[0] || null;
+  }, { silent:true });
   return out;
 }
 
