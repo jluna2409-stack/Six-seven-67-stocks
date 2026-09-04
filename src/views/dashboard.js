@@ -1,8 +1,8 @@
-import { get } from '../store.js';
+import { get, update } from '../store.js';
 import { totalsFor, positions, twr, dividendSummary, holdingsSummary } from '../engine.js';
 import { quotes, isFund } from '../market.js';
 import { t } from '../i18n.js';
-import { usd, usdCompact, signedUsd, signedPct, pct, cls, esc, dayKeyToTs, dateLong, timeShort, num } from '../format.js';
+import { usd, usdCompact, signedUsd, signedPct, pct, cls, esc, dayKey, dayKeyToTs, dateLong, timeShort, num } from '../format.js';
 import { lineChart, donut, PALETTE } from '../charts.js';
 import { latentTax } from '../taxreport.js';
 import { helpBtn } from '../help.js';
@@ -15,6 +15,7 @@ import { scanDividends, recordAll, recordDetected } from '../dividends.js';
 const RANGES = [['1D',1],['1W',7],['1M',30],['3M',90],['6M',180],['1Y',365],['ALL',1e6]];
 let range = localStorage.getItem('bolsa-sim/range') || '1M';
 let divScope = 'year';
+let scanning = false;   // guards against two sweeps racing and paying twice
 
 // Intraday samples so the chart is alive on day one; kept for the session and
 // restored on reload so today's curve is not lost when the tab is refreshed.
@@ -303,11 +304,28 @@ export default function dashboard(host){
       box.innerHTML = quiet ? '' : `<div class="note" style="margin-bottom:14px">${esc(t('dv.needKey'))}</div>`;
       return;
     }
+    // The free tier allows 25 requests a day and each position costs one, so the
+    // automatic sweep runs once a day; the button always forces a fresh look.
+    if (quiet){
+      if (Date.now() < (get().avLimitedUntil || 0)){ box.innerHTML = ''; return; }
+      if (get().lastDivScan === dayKey()){ box.innerHTML = ''; return; }
+    }
+    if (scanning) return;
+    scanning = true;
+    // Marked before the await: two views mounting in the same tick would both
+    // pass the check and spend the budget twice.
+    update(st => { st.lastDivScan = dayKey(); }, { silent:true });
     if (!quiet) box.innerHTML = `<div class="tiny muted" style="margin-bottom:12px">${esc(t('dv.checking'))}</div>`;
-    let scan;
-    try { scan = await scanDividends(); } catch { box.innerHTML = ''; return; }
 
-    if (scan.limited){ box.innerHTML = `<div class="note" style="margin-bottom:14px">${esc(t('dv.limit'))}</div>`; return; }
+    let scan;
+    try { scan = await scanDividends(get(), { force: !quiet }); }
+    catch { box.innerHTML = ''; return; }
+    finally { scanning = false; }
+
+    if (scan.limited){
+      box.innerHTML = quiet ? '' : `<div class="note" style="margin-bottom:14px">${esc(t('dv.limit'))}</div>`;
+      return;
+    }
     if (!scan.pending.length){
       const next = scan.upcoming[0];
       box.innerHTML = quiet && !next ? ''

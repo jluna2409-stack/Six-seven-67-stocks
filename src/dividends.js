@@ -39,7 +39,7 @@ function alreadyRecorded(state, symbol, exDate){
  *   pending  — already paid and not yet in the ledger
  *   upcoming — announced but not paid yet, shown for information
  */
-export async function scanDividends(state = get()){
+export async function scanDividends(state = get(), { force = false } = {}){
   const s = settings();
   const out = { pending: [], upcoming: [], needsKey: !s.avKey, limited: false };
   if (!s.avKey) return out;
@@ -47,8 +47,12 @@ export async function scanDividends(state = get()){
   const today = dayKey();
   for (const symbol of Object.keys(state.positions)){
     let rows;
-    try { rows = await fetchDividendHistory(symbol); }
-    catch (e){ if (String(e.message) === 'av-limit') out.limited = true; continue; }
+    try { rows = await fetchDividendHistory(symbol, { force }); }
+    catch (e){
+      // One cap means the whole budget is gone; asking for the rest wastes it.
+      if (String(e.message) === 'av-limit'){ out.limited = true; break; }
+      continue;
+    }
     if (!rows) continue;
 
     for (const d of rows){
@@ -91,6 +95,7 @@ export function recordAll(items){
 /** Called at startup: records silently only when the user asked for it. */
 export async function autoRecordDividends(){
   if (!settings().autoDividends || !settings().avKey) return [];
+  if (Date.now() < (get().avLimitedUntil || 0)) return [];
   const scan = await scanDividends();
   if (!scan.pending.length) return [];
   recordAll(scan.pending);

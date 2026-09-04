@@ -345,12 +345,16 @@ export function lookup(symbol){
  * data on its free tier and sends CORS headers, so the browser can read it
  * directly. Cached for a day per symbol to stay inside the free request budget.
  */
-export async function fetchDividendHistory(symbol, { maxAgeMs = 20 * 3600_000 } = {}){
+export async function fetchDividendHistory(symbol, { maxAgeMs = 20 * 3600_000, force = false } = {}){
   const s = settings();
   if (!s.avKey) return null;
 
   const cached = get().divHistory?.[symbol];
   if (cached && Date.now() - cached.at < maxAgeMs) return cached.rows;
+
+  // The free tier allows 25 requests a day. Once it says no, asking again only
+  // burns nothing and returns nothing, so stand down until tomorrow.
+  if (!force && Date.now() < (get().avLimitedUntil || 0)) throw new Error('av-limit');
 
   const u = new URL('https://www.alphavantage.co/query');
   u.searchParams.set('function', 'DIVIDENDS');
@@ -366,7 +370,11 @@ export async function fetchDividendHistory(symbol, { maxAgeMs = 20 * 3600_000 } 
 
   // Rate limit or a bad key answer with a note instead of data; keep what we had.
   if (!j || !Array.isArray(j.data)){
-    if (j && (j.Information || j.Note)) throw new Error('av-limit');
+    if (j && (j.Information || j.Note)){
+      const t = new Date(); t.setHours(24, 5, 0, 0);          // retry after midnight
+      update(st => { st.avLimitedUntil = t.getTime(); }, { silent:true });
+      throw new Error('av-limit');
+    }
     return cached?.rows || null;
   }
 

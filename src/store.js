@@ -39,6 +39,8 @@ export const DEFAULT_STATE = () => ({
   taxPaid: {},          // year -> USD paid
   profiles: {},         // SYM -> issuer profile from Finnhub (name, logo, exchange)
   divHistory: {},       // SYM -> announced dividends from Alpha Vantage
+  avLimitedUntil: 0,    // provider daily cap hit; do not ask again before this
+  lastDivScan: '',      // day key of the last automatic dividend scan
   fxHistory: {},        // 'YYYY-MM-DD' -> USD/MXN, for back-dated conversions
   lastRun: 0,           // last time scheduler ran
   lastInterestDay: dayKey()
