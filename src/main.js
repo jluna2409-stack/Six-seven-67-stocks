@@ -1,6 +1,6 @@
 import { load, get, update, persistNow, settings } from './store.js';
 import { setLang, getLang, t } from './i18n.js';
-import { connectWs, watch, refreshQuotes, quotes, onTick, onStatus, marketOpen, loadCatalog, getStatus } from './market.js';
+import { connectWs, watch, refreshQuotes, quotes, onTick, onStatus, marketOpen, loadCatalog, getStatus, prefetchProfiles } from './market.js';
 import { snapshot, accrueCashInterest, deposit, totalsFor } from './engine.js';
 import { runDue } from './scheduler.js';
 import { startFx, refreshFx } from './fx.js';
@@ -153,7 +153,10 @@ async function boot(){
   snapshot(quotes);                       // always leave a mark for today
   connectWs();
   watch(syms);
-  if (syms.length) refreshQuotes(syms).then(() => { tickAll(); snapshot(quotes); });
+  if (syms.length) refreshQuotes(syms).then(() => {
+    tickAll(); snapshot(quotes);
+    prefetchProfiles(syms).then(() => { if (current?.refresh) current.refresh(); });
+  });
 
   onTick(() => { if (current?.tick) current.tick(); });
 

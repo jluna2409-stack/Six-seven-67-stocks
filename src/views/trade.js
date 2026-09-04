@@ -5,6 +5,7 @@ import { t } from '../i18n.js';
 import { usd, esc, num, signedPct, cls } from '../format.js';
 import { openTrade } from './tradesheet.js';
 import { helpBtn } from '../help.js';
+import { mark, bestName } from '../instrument.js';
 
 let filter = 'all';
 let query = '';
@@ -45,8 +46,10 @@ export default function trade(host){
     $('#holdcard').hidden = rows.length === 0;
     $('#holds').innerHTML = rows.map(r => `
       <button class="list-item" data-sym="${esc(r.symbol)}">
+        ${mark(r.symbol, 32)}
         <div class="li-main">
           <div class="li-t">${esc(r.symbol)}</div>
+          <div class="li-s">${esc(bestName(r.symbol))}</div>
           <div class="li-s">${num(r.qty,4)} ${esc(t('pf.qty').toLowerCase())} · ${usd(r.value)}</div>
         </div>
         <div class="li-r"><span class="pctbox ${cls(r.plPct)}">${signedPct(r.plPct)}</span></div>

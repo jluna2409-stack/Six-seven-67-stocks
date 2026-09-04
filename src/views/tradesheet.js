@@ -1,6 +1,7 @@
 import { get } from '../store.js';
 import { buy, sell, commissionFor, positions, dividend } from '../engine.js';
-import { quotes, fetchQuote, lookup, isFund, watch } from '../market.js';
+import { quotes, fetchQuote, lookup, isFund, watch, fetchProfile } from '../market.js';
+import { issuerHeader, refreshHeaders, bestName } from '../instrument.js';
 import { t } from '../i18n.js';
 import { usd, num, esc, signedUsd, cls, signedPct, dateLong } from '../format.js';
 import { sheet, toast, field, moneyInput } from '../ui.js';
@@ -13,8 +14,8 @@ export function openTrade(symbol, side = 'buy', afterFn){
 
   sheet({
     title: symbol,
-    sub: `${esc(meta.name || '')} <span class="badge ${isFund(meta.type) ? 'etf' : 'stock'}" style="margin-left:6px">${isFund(meta.type) ? 'ETF' : 'STOCK'}</span>`,
     body: `
+      ${issuerHeader(symbol)}
       <div class="pillrow" style="margin-bottom:14px">
         <button class="chip ${side === 'buy' ? 'active' : ''}" data-side="buy" style="flex:1">${esc(t('tr.buy'))}</button>
         <button class="chip ${side === 'sell' ? 'active' : ''}" data-side="sell" style="flex:1">${esc(t('tr.sell'))}</button>
@@ -137,12 +138,14 @@ export function openTrade(symbol, side = 'buy', afterFn){
       };
       paint();
       fetchQuote(symbol).then(paint).catch(() => paint());
+      // the issuer profile arrives after the sheet is already usable
+      fetchProfile(symbol).then(pr => { if (pr) refreshHeaders(el, symbol); }).catch(() => {});
 
       $('#go').onclick = () => {
         const q = currentQty();
         if (q <= 0) return;
         const r = S === 'buy'
-          ? buy({ symbol, name: meta.name, type: meta.type, qty: q, price })
+          ? buy({ symbol, name: bestName(symbol) || meta.name, type: meta.type, qty: q, price })
           : sell({ symbol, qty: q, price });
         if (!r.ok){ toast(t('tr.' + (r.error === 'noCash' ? 'noCash' : 'noShares')), 'err'); return; }
         toast(S === 'buy' ? t('tr.bought') : t('tr.sold'), 'ok');
@@ -163,8 +166,8 @@ export function openPosition(symbol, afterFn){
   if (!p) return;
   sheet({
     title: symbol,
-    sub: esc(p.name),
     body: `
+      ${issuerHeader(symbol)}
       <div class="grid g2" style="margin-bottom:14px">
         <div class="kpi"><div class="k">${esc(t('pf.marketValue'))}</div><div class="v num">${usd(p.value)}</div><div class="d num">${num(p.qty,4)} × ${usd(p.last)}</div></div>
         <div class="kpi"><div class="k">${esc(t('pf.totalReturn'))}</div><div class="v num ${cls(p.pl)}">${signedUsd(p.pl)}</div><div class="d num ${cls(p.pl)}">${signedPct(p.plPct)}</div></div>
@@ -174,7 +177,7 @@ export function openPosition(symbol, afterFn){
 
       <h3 class="card-title">${esc(t('pf.lots'))}</h3>
       <div class="scrollx" style="margin:0"><table class="tbl">
-        <thead><tr><th>${esc(t('cash.start'))}</th><th>${esc(t('pf.qty'))}</th><th>${esc(t('tr.price'))}</th><th>${esc(t('pf.pl'))}</th></tr></thead>
+        <thead><tr><th>${esc(t('pf.lotDate'))}</th><th>${esc(t('pf.qty'))}</th><th>${esc(t('tr.price'))}</th><th>${esc(t('pf.pl'))}</th></tr></thead>
         <tbody>${p.lots.map(l => {
           const pl = l.qty * (p.last - l.price) - (l.fee || 0);
           return `<tr><td>${dateLong(l.ts)}</td><td class="num">${num(l.qty,4)}</td><td class="num">${usd(l.price)}</td><td class="num ${cls(pl)}">${signedUsd(pl)}</td></tr>`;
@@ -189,6 +192,7 @@ export function openPosition(symbol, afterFn){
         <button class="btn ghost" data-act="div">${esc(t('pf.dividend'))}</button>
       </div>`,
     onMount(el, close){
+      fetchProfile(symbol).then(pr => { if (pr) refreshHeaders(el, symbol); }).catch(() => {});
       el.querySelector('[data-act=buy]').onclick = () => { close(); setTimeout(() => openTrade(symbol, 'buy', afterFn), 260); };
       el.querySelector('[data-act=sell]').onclick = () => { close(); setTimeout(() => openTrade(symbol, 'sell', afterFn), 260); };
       el.querySelector('[data-act=div]').onclick = () => { close(); setTimeout(() => openDividend(symbol, afterFn), 260); };
@@ -200,7 +204,7 @@ export function openPosition(symbol, afterFn){
 export function openDividend(symbol, afterFn){
   sheet({
     title: t('pf.dividend'),
-    sub: esc(symbol),
+    sub: `${esc(symbol)} · ${esc(bestName(symbol))}`,
     body: `${field(t('tax.divGross'), moneyInput('gross'))}
       <div class="note" style="margin-bottom:14px">${esc(t('tax.divHelp'))}</div>
       <div class="card tight" style="background:var(--bg-elev2);margin-bottom:14px">

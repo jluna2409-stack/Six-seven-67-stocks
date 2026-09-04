@@ -2,7 +2,7 @@
  * Market data layer — Finnhub REST quotes + real-time WebSocket trades,
  * the US instrument catalog, and optional historical backfill.
  */
-import { settings, get } from './store.js';
+import { settings, get, update } from './store.js';
 
 const BASE = 'https://finnhub.io/api/v1';
 
@@ -74,8 +74,38 @@ export async function refreshQuotes(symbols, { spacing = 260 } = {}){
   return ok;
 }
 
+/**
+ * Issuer profile: proper name, logo, exchange, industry.
+ *
+ * Finnhub only serves this for individual stocks — ETFs come back empty, since
+ * their profiles sit behind a paid endpoint. A miss is cached too, so an ETF is
+ * not re-requested on every open.
+ */
+export function profileOf(symbol){
+  const p = get().profiles?.[symbol];
+  return p && p.name ? p : null;
+}
+
 export async function fetchProfile(symbol){
-  try { return await api('/stock/profile2', { symbol }); } catch { return null; }
+  const cached = get().profiles?.[symbol];
+  if (cached) return cached.name ? cached : null;
+  let j = null;
+  try { j = await api('/stock/profile2', { symbol }); } catch { return null; }
+  const rec = (j && j.name)
+    ? { name: j.name, ticker: j.ticker || symbol, logo: j.logo || '', exchange: j.exchange || '', industry: j.finnhubIndustry || '',
+        country: j.country || '', ipo: j.ipo || '', weburl: j.weburl || '', at: Date.now() }
+    : { name: '', at: Date.now() };                      // remember the miss
+  update(st => { st.profiles = st.profiles || {}; st.profiles[symbol] = rec; }, { silent:true });
+  return rec.name ? rec : null;
+}
+
+/** Warm the cache for the symbols the user actually holds. */
+export async function prefetchProfiles(symbols, { spacing = 320 } = {}){
+  for (const s of symbols){
+    if (get().profiles?.[s]) continue;
+    try { await fetchProfile(s); } catch { /* ignore */ }
+    await new Promise(r => setTimeout(r, spacing));
+  }
 }
 
 /* --------------------------- WebSocket ---------------------------- */

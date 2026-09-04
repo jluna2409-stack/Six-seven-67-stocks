@@ -6,6 +6,7 @@ import { usd, num, esc, signedUsd, signedPct, pct, cls } from '../format.js';
 import { openPosition } from './tradesheet.js';
 import { bars } from '../charts.js';
 import { helpBtn } from '../help.js';
+import { mark, bestName } from '../instrument.js';
 
 let sortBy = 'value';
 
@@ -65,8 +66,12 @@ export default function portfolio(host){
       </tr></thead>
       <tbody>${rs.map(r => `
         <tr data-sym="${esc(r.symbol)}" style="cursor:pointer">
-          <td><div style="font-weight:700">${esc(r.symbol)} <span class="badge ${isFund(r.type)?'etf':'stock'}">${isFund(r.type)?'ETF':'STK'}</span></div>
-              <div class="tiny muted" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.name)}</div></td>
+          <td><div style="display:flex;align-items:center;gap:8px">
+                ${mark(r.symbol, 26)}
+                <div style="min-width:0">
+                  <div style="font-weight:700">${esc(r.symbol)} <span class="badge ${isFund(r.type)?'etf':'stock'}">${isFund(r.type)?'ETF':'STK'}</span></div>
+                  <div class="tiny muted" style="max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(bestName(r.symbol))}</div>
+                </div></div></td>
           <td class="num">${num(r.qty,4)}</td>
           <td class="num" data-px>${usd(r.last)}</td>
           <td class="num">${usd(r.avg)}</td>

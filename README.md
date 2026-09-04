@@ -34,6 +34,7 @@ También funciona tal cual en GitHub Pages, Netlify, Vercel o cualquier hosting 
 | **Sueldo anclado a pesos** | El monto recurrente se guarda **en la moneda que capturas**. En pesos queda anclado ahí: cada depósito se convierte con el tipo de cambio **de su propio día**, así que un sueldo de 22,000 MXN sigue valiendo 22,000 MXN aunque el dólar se mueva, y el ISR retenido en pesos es idéntico cada mes. Los periodos atrasados se valúan con el tipo de cambio que aplicaba en su fecha, no con el de hoy. |
 | **Dividendos** | Sección propia que aísla **cuánto has ganado solo con dividendos**: neto en tu bolsillo, retención de EE. UU., rendimiento sobre costo, promedio mensual, ritmo anual y desglose por posición (este año o histórico). |
 | **Resumen de tenencias** | Cuántos títulos tienes, de qué empresas o índices son, y cuánto valen en total — con el desglose entre acciones y ETFs. |
+| **Identidad del instrumento** | Al abrir una posición se trae el **nombre real, el logo, la bolsa y el sector** desde `/stock/profile2` (AAPL → *Apple Inc*, NASDAQ, Technology). Los perfiles se cachean y se precargan al abrir la app para lo que tengas en cartera. Los **ETFs vienen vacíos en el plan gratuito**, así que conservan el nombre abreviado del catálogo y reciben un monograma de color en lugar de logo. |
 | **Ayuda contextual** | Un botón **?** junto a cada concepto abre una explicación en lenguaje llano (qué es el TWR, por qué la plusvalía no paga impuesto, bruto vs. neto, PEPS vs. costo promedio…). Ajustes trae el índice completo con los 21 temas. |
 | **Impuestos (México)** | Ganancia de capital, dividendos del extranjero y declaración anual — detalle abajo. |
 | **Calendario fiscal** | Cada impuesto con **su propia fecha**: la declaración anual el 30 de abril del año siguiente, y el 10% adicional de dividendos el día 17 del mes siguiente. Estados *En curso / Programado / Ya casi / Vencido*, aviso en el Resumen y punto rojo en la pestaña cuando algo vence o está por vencer. Opción de que la app lo descuente sola al llegar la fecha. |
@@ -83,7 +84,7 @@ La API key de Finnhub incluida es de **plan gratuito**. Al probar los endpoints:
 | `/quote` | ✅ 200 | Precios en vivo y de cierre. |
 | `wss://ws.finnhub.io` | ✅ trades en vivo | Feed en tiempo real de las posiciones. |
 | `/stock/symbol?exchange=US` | ✅ 200 | Catálogo completo, incluido en `data/catalog.json` y actualizable desde Ajustes. |
-| `/stock/profile2` | ✅ 200 | Metadatos del emisor. |
+| `/stock/profile2` | ✅ 200 (solo acciones) | Nombre real, logo, bolsa y sector del emisor. Para ETFs devuelve `{}` — sus perfiles son de pago —, así que ahí se usa el nombre del catálogo. |
 | `/stock/candle` (histórico) | ❌ **403 — de pago** | La app **construye su propio historial**: guarda una foto del patrimonio cada día que la abres, más una curva intradía en vivo. Opcionalmente puedes pegar una API key **gratuita de Alpha Vantage** en Ajustes para descargar el histórico de precios pasado. |
 | `/stock/dividend` | ❌ **403 — de pago** | Los dividendos se **capturan a mano** (desde el detalle de la posición o desde la sección Dividendos); la app aplica la retención de EE. UU., los abona al efectivo y los suma a la declaración anual. |
 | `/forex/rates` | ❌ **403 — de pago** | El tipo de cambio USD/MXN se toma de proveedores públicos gratuitos con CORS abierto (`open.er-api.com` para el actual, `currency-api` para el **histórico por fecha**). Se actualiza al abrir la app y cada 6 horas. La cotización es **diaria**, igual que el tipo de cambio FIX de Banxico —que es el que aplica para efectos fiscales—, así que no existe un "tick a tick" que tenga sentido fiscal aquí. Se puede apagar y fijar a mano. Las consultas históricas se cachean y tienen tope de 4 s: si la red falla, se usa el tipo de cambio actual y la app no se traba. |
@@ -110,6 +111,7 @@ src/
   fx.js                tipo de cambio USD/MXN actual e histórico por fecha
   help.js              ayuda contextual bilingüe (21 temas)
   charts.js            SVG: línea con scrubber, dona, barras
+  instrument.js        logo/monograma, nombre real y encabezado del emisor
   i18n.js  format.js  ui.js
   views/               dashboard, portfolio, trade, cash, taxes, history, settings
 ```

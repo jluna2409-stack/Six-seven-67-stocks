@@ -9,6 +9,7 @@ import { helpBtn } from '../help.js';
 import { sheet } from '../ui.js';
 import { openDividend } from './tradesheet.js';
 import { alerts, daysUntil } from '../obligations.js';
+import { mark, bestName } from '../instrument.js';
 
 const RANGES = [['1D',1],['1W',7],['1M',30],['3M',90],['6M',180],['1Y',365],['ALL',1e6]];
 let range = localStorage.getItem('bolsa-sim/range') || '1M';
@@ -207,8 +208,10 @@ export default function dashboard(host){
     // ---- positions
     $('poslist').innerHTML = rows.length ? rows.map(r => `
       <button class="list-item" data-sym="${esc(r.symbol)}">
+        ${mark(r.symbol, 34)}
         <div class="li-main">
           <div class="li-t">${esc(r.symbol)} <span class="badge ${isFund(r.type) ? 'etf' : 'stock'}">${isFund(r.type) ? 'ETF' : 'STOCK'}</span></div>
+          <div class="li-s">${esc(bestName(r.symbol))}</div>
           <div class="li-s">${num(r.qty, 4)} × ${usd(r.last)} · ${esc(t('pf.avg'))} ${usd(r.avg)}</div>
         </div>
         <div class="li-r">
@@ -251,9 +254,10 @@ export default function dashboard(host){
         <div class="hd" style="text-align:right">${esc(t('hold.shares'))}</div>
         <div class="hd" style="text-align:right">${esc(t('hold.value'))}</div>
         ${rows.map(r => `
-          <div class="hn"><b>${esc(r.symbol)}</b>
-            <span class="badge ${isFund(r.type) ? 'etf' : 'stock'}">${isFund(r.type) ? 'ETF' : 'STK'}</span>
-            <span class="muted tiny">${esc(r.name)}</span></div>
+          <div class="hn" style="display:flex;align-items:center;gap:8px">
+            ${mark(r.symbol, 22)}
+            <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              <b>${esc(r.symbol)}</b> <span class="muted tiny">${esc(bestName(r.symbol))}</span></span></div>
           <div class="num" style="text-align:right">${num(r.qty, 4)}</div>
           <div class="num" style="text-align:right">${usd(r.value)}</div>`).join('')}
         <div class="ht">${esc(t('hold.total'))}</div>

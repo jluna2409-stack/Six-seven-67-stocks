@@ -19,7 +19,7 @@ export const DICT = {
 
     'pf.title':'Cartera','pf.value':'Valor','pf.cost':'Costo','pf.qty':'Títulos','pf.avg':'Precio prom.',
     'pf.pl':'P/G','pf.day':'Día','pf.weight':'Peso','pf.sortValue':'Valor','pf.sortPL':'P/G','pf.sortName':'Nombre',
-    'pf.buyMore':'Comprar más','pf.sellPos':'Vender','pf.detail':'Detalle de posición','pf.lots':'Lotes',
+    'pf.buyMore':'Comprar más','pf.sellPos':'Vender','pf.detail':'Detalle de posición','pf.lots':'Lotes','pf.lotDate':'Fecha de compra',
     'pf.dividend':'Registrar dividendo','pf.marketValue':'Valor de mercado','pf.totalReturn':'Rendimiento total',
 
     'tr.title':'Operar','tr.search':'Busca acción o ETF (símbolo o nombre)','tr.buy':'Comprar','tr.sell':'Vender',
@@ -90,7 +90,7 @@ export const DICT = {
     'tx.DEPOSIT':'Depósito','tx.WITHDRAW':'Retiro','tx.SALARY':'Salario','tx.BUY':'Compra','tx.SELL':'Venta',
     'tx.DIVIDEND':'Dividendo','tx.TAX':'Pago de ISR','tx.INTEREST':'Interés','tx.FEE':'Comisión',
 
-    'div.title':'Dividendos','div.total':'Total cobrado','div.netPocket':'Neto en tu bolsillo',
+    'inst.fundNote':'Fondo indexado / ETF','div.title':'Dividendos','div.total':'Total cobrado','div.netPocket':'Neto en tu bolsillo',
     'div.gross':'Bruto','div.withheld':'Retención EE.UU.','div.yieldCost':'Rendimiento sobre costo',
     'div.monthly':'Promedio mensual','div.annualised':'Ritmo anual','div.payments':'pagos',
     'div.none':'Aún no registras dividendos. Abre una posición y usa "Registrar dividendo" cuando tu broker te pague uno.',
@@ -132,7 +132,7 @@ export const DICT = {
 
     'pf.title':'Portfolio','pf.value':'Value','pf.cost':'Cost','pf.qty':'Shares','pf.avg':'Avg price',
     'pf.pl':'P/L','pf.day':'Day','pf.weight':'Weight','pf.sortValue':'Value','pf.sortPL':'P/L','pf.sortName':'Name',
-    'pf.buyMore':'Buy more','pf.sellPos':'Sell','pf.detail':'Position detail','pf.lots':'Lots',
+    'pf.buyMore':'Buy more','pf.sellPos':'Sell','pf.detail':'Position detail','pf.lots':'Lots','pf.lotDate':'Purchase date',
     'pf.dividend':'Record dividend','pf.marketValue':'Market value','pf.totalReturn':'Total return',
 
     'tr.title':'Trade','tr.search':'Search stock or ETF (symbol or name)','tr.buy':'Buy','tr.sell':'Sell',
@@ -203,7 +203,7 @@ export const DICT = {
     'tx.DEPOSIT':'Deposit','tx.WITHDRAW':'Withdrawal','tx.SALARY':'Salary','tx.BUY':'Buy','tx.SELL':'Sell',
     'tx.DIVIDEND':'Dividend','tx.TAX':'Tax payment','tx.INTEREST':'Interest','tx.FEE':'Commission',
 
-    'div.title':'Dividends','div.total':'Total received','div.netPocket':'Net in your pocket',
+    'inst.fundNote':'Index fund / ETF','div.title':'Dividends','div.total':'Total received','div.netPocket':'Net in your pocket',
     'div.gross':'Gross','div.withheld':'U.S. withholding','div.yieldCost':'Yield on cost',
     'div.monthly':'Monthly average','div.annualised':'Annual pace','div.payments':'payments',
     'div.none':'No dividends recorded yet. Open a position and use "Record dividend" when your broker pays one.',
