@@ -92,7 +92,7 @@ export const DICT = {
 
     'inst.fundNote':'Fondo indexado / ETF','div.title':'Dividendos','div.total':'Total cobrado','div.netPocket':'Neto en tu bolsillo',
     'div.gross':'Bruto','div.withheld':'Retención EE.UU.','div.yieldCost':'Rendimiento sobre costo',
-    'div.monthly':'Promedio mensual','div.annualised':'Ritmo anual','div.payments':'pagos',
+    'div.monthly':'Promedio mensual','div.annualised':'Ritmo anual','div.payments':'pagos','div.payment':'pago','div.needHistory':'Aún sin historial suficiente',
     'div.none':'Aún no registras dividendos. Abre una posición y usa "Registrar dividendo" cuando tu broker te pague uno.',
     'div.byPosition':'Por posición','div.thisYear':'Este año','div.allTime':'Histórico',
     'div.lastPay':'Último pago','div.sold':'ya vendida',
@@ -205,7 +205,7 @@ export const DICT = {
 
     'inst.fundNote':'Index fund / ETF','div.title':'Dividends','div.total':'Total received','div.netPocket':'Net in your pocket',
     'div.gross':'Gross','div.withheld':'U.S. withholding','div.yieldCost':'Yield on cost',
-    'div.monthly':'Monthly average','div.annualised':'Annual pace','div.payments':'payments',
+    'div.monthly':'Monthly average','div.annualised':'Annual pace','div.payments':'payments','div.payment':'payment','div.needHistory':'Not enough history yet',
     'div.none':'No dividends recorded yet. Open a position and use "Record dividend" when your broker pays one.',
     'div.byPosition':'By position','div.thisYear':'This year','div.allTime':'All time',
     'div.lastPay':'Last payment','div.sold':'sold',

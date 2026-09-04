@@ -279,8 +279,9 @@ export function dividendSummary(state = get(), prices = {}, year = null){
   return {
     gross, withheld, net, count, rows, totalCost,
     yieldOnCost: totalCost > 0 ? gross / totalCost * 100 : 0,
-    annualised: days > 30 ? gross * 365 / days : null,   // pace so far, extrapolated
-    monthlyAvg: days > 0 ? net / (days / 30.44) : 0
+    // Both paces need enough history to mean anything; below that, show nothing.
+    annualised: days >= 90 ? gross * 365 / days : null,
+    monthlyAvg: days >= 60 ? net / (days / 30.44) : null
   };
 }
 

@@ -329,15 +329,17 @@ export default function dashboard(host){
     $('divbox').innerHTML = `
       <div class="grid g2" style="margin-bottom:14px">
         <div class="kpi"><div class="k">${esc(t('div.netPocket'))}</div><div class="v num up">${usd(D.net)}</div>
-          <div class="d num">${D.count} ${esc(t('div.payments'))}</div></div>
+          <div class="d num">${D.count} ${esc(D.count === 1 ? t('div.payment') : t('div.payments'))}</div></div>
         <div class="kpi"><div class="k">${esc(t('div.yieldCost'))}</div><div class="v num">${pct(D.yieldOnCost, 2)}</div>
-          <div class="d num">${esc(t('div.monthly'))} ${usd(D.monthlyAvg)}</div></div>
+          <div class="d num">${D.monthlyAvg == null
+            ? esc(t('div.needHistory'))
+            : `${esc(t('div.monthly'))} ${usd(D.monthlyAvg)}`}</div></div>
       </div>
       <div class="scrollx" style="margin:0"><table class="tbl">
         <thead><tr><th>${esc(t('pf.title'))}</th><th>${esc(t('div.gross'))}</th><th>${esc(t('div.withheld'))}</th><th>${esc(t('div.netPocket'))}</th></tr></thead>
         <tbody>${D.rows.map(r => `<tr>
           <td><b>${esc(r.symbol)}</b>${r.open ? '' : ` <span class="badge warn">${esc(t('div.sold'))}</span>`}
-              <div class="tiny muted">${r.count} ${esc(t('div.payments'))} · ${dateLong(r.lastTs)}</div>
+              <div class="tiny muted">${r.count} ${esc(r.count === 1 ? t('div.payment') : t('div.payments'))} · ${dateLong(r.lastTs)}</div>
               <div class="tiny muted">${esc(t('div.yieldCost'))} ${r.yieldOnCost == null ? '—' : pct(r.yieldOnCost, 2)}</div></td>
           <td class="num">${usd(r.gross)}</td>
           <td class="num down">−${usd(r.withheld)}</td>
