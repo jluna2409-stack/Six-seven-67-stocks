@@ -1,4 +1,4 @@
-import { get, TX } from '../store.js';
+import { get, TX, update, persistNow } from '../store.js';
 import { deposit, withdraw } from '../engine.js';
 import { createRecurring, previewRun, toggleRecurring, deleteRecurring, runDue, FREQS } from '../scheduler.js';
 import { salaryNet } from '../tax.js';
@@ -90,12 +90,13 @@ export default function cash(host){
   /* ---- gross -> net salary calculator ---- */
   function drawSim(){
     const s = get();
+    const sim = s.settings.salarySim || { amount:'', currency:'MXN', freq:'monthly' };
     $('#simbox').innerHTML = `
       <div class="inline-2">
-        ${field(t('tax.salaryGross'), moneyInput('sg', '', '25000'))}
-        ${field(t('cash.currency'), selectInput('sc', [['MXN','MXN'],['USD','USD']], 'MXN'))}
+        ${field(t('tax.salaryGross'), moneyInput('sg', sim.amount, '25000'))}
+        ${field(t('cash.currency'), selectInput('sc', [['MXN','MXN'],['USD','USD']], sim.currency))}
       </div>
-      ${field(t('cash.freq'), selectInput('sf', FREQS.map(f => [f, FREQ_LABEL()[f]]), 'monthly'))}
+      ${field(t('cash.freq'), selectInput('sf', FREQS.map(f => [f, FREQ_LABEL()[f]]), sim.freq))}
       <div class="card tight" style="background:var(--bg-elev2)">
         <div class="row small"><span class="muted">${esc(t('tax.salaryGross'))}</span><span class="num" id="r-g">${usd(0)}</span></div>
         <div class="row small" style="margin-top:7px"><span class="muted">${esc(t('cash.isrRet'))}</span><span class="num down" id="r-i">${usd(0)}</span></div>
@@ -105,7 +106,21 @@ export default function cash(host){
         <div class="row"><span style="font-weight:650">${esc(t('cash.netPreview'))}</span><span class="num" id="r-n" style="font-weight:700;font-size:17px">${usd(0)}</span></div>
         <div class="row tiny" style="margin-top:6px"><span class="muted">${esc(t('tax.effective'))}</span><span class="num muted" id="r-e">0%</span></div>
       </div>
-      <div class="tiny muted" style="margin-top:10px">1 USD = ${s.settings.fx} MXN · ${esc(t('tax.tableYear'))}: ${s.settings.tables.year}</div>`;
+      <div class="tiny muted" style="margin-top:10px">1 USD = ${s.settings.fx} MXN · ${esc(t('tax.tableYear'))}: ${s.settings.tables.year}</div>
+      <button class="btn sec" id="simadd" style="margin-top:12px">${esc(t('cash.simToRecurring'))}</button>
+      <div class="tiny muted" style="margin-top:8px;text-align:center" id="simsaved"></div>`;
+
+    const save = () => {
+      update(st => {
+        st.settings.salarySim = {
+          amount: $('[name=sg]').value,
+          currency: $('[name=sc]').value,
+          freq: $('[name=sf]').value
+        };
+      }, { silent:true });
+      persistNow();
+      $('#simsaved').textContent = t('cash.simSaved');
+    };
 
     const calc = () => {
       const raw = Number($('[name=sg]').value || 0);
@@ -119,9 +134,27 @@ export default function cash(host){
       $('#r-n').textContent = usd(r.net);
       $('#r-e').textContent = r.effRate.toFixed(1) + '%';
     };
-    $('[name=sg]').oninput = calc;
-    $('[name=sf]').onchange = calc;
-    $('[name=sc]').onchange = calc;
+    calc();   // a restored amount must show its result, not a stale $0.00
+    const onChange = () => { calc(); save(); };
+    $('[name=sg]').oninput = onChange;
+    $('[name=sf]').onchange = onChange;
+    $('[name=sc]').onchange = onChange;
+
+    $('#simadd').onclick = () => {
+      const raw = Number($('[name=sg]').value || 0);
+      if (raw <= 0){ toast(t('cash.simNeedAmount'), 'err'); return; }
+      save();
+      createRecurring({
+        name: t('cash.salary'),
+        amount: raw,
+        currency: $('[name=sc]').value,
+        gross: true,
+        freq: $('[name=sf]').value,
+        startTs: Date.now()
+      });
+      toast(t('act.done'), 'ok');
+      draw();
+    };
   }
 
   /* ---- actions ---- */

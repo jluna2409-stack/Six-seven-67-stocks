@@ -205,18 +205,107 @@ export async function refreshCatalog(){
   return ingest(obj);
 }
 
+/**
+ * Curated index trackers with search aliases.
+ *
+ * The catalog carries each fund's legal name, which often hides the index it
+ * tracks: QQQ is filed as "INVESCO QQQ TRUST SERIES 1", so searching "nasdaq"
+ * never reached it. These aliases (Spanish and English) map how people actually
+ * name an index onto the funds that track it.
+ */
+export const INDEXES = [
+  { sym:'VOO',  index:'S&P 500',              alias:'sp500 s&p500 s&p 500 500 sp indice index vanguard' },
+  { sym:'IVV',  index:'S&P 500',              alias:'sp500 s&p500 s&p 500 500 ishares core' },
+  { sym:'SPY',  index:'S&P 500',              alias:'sp500 s&p500 s&p 500 500 spider spdr' },
+  { sym:'QQQ',  index:'Nasdaq 100',           alias:'nasdaq nasdaq100 nasdaq 100 ndx qqq tecnologia technology tech' },
+  { sym:'QQQM', index:'Nasdaq 100',           alias:'nasdaq nasdaq100 nasdaq 100 ndx' },
+  { sym:'OEF',  index:'S&P 100',              alias:'sp100 s&p100 s&p 100 100' },
+  { sym:'DIA',  index:'Dow Jones',            alias:'dow dowjones dow jones djia industrial' },
+  { sym:'IWM',  index:'Russell 2000',         alias:'russell russell2000 russell 2000 small cap pequenas' },
+  { sym:'IJH',  index:'S&P MidCap 400',       alias:'sp400 s&p 400 midcap mid cap medianas' },
+  { sym:'IJR',  index:'S&P SmallCap 600',     alias:'sp600 s&p 600 smallcap small cap pequenas' },
+  { sym:'VTI',  index:'Total US Market',      alias:'total market mercado total estados unidos eeuu usa todo' },
+  { sym:'VT',   index:'Total World',          alias:'mundo world global mundial todo el mundo' },
+  { sym:'VXUS', index:'International ex-US',  alias:'internacional international fuera de eeuu ex-us extranjero' },
+  { sym:'VEA',  index:'Developed Markets',    alias:'desarrollados developed ftse' },
+  { sym:'EFA',  index:'MSCI EAFE',            alias:'eafe desarrollados developed msci europa asia' },
+  { sym:'VWO',  index:'Emerging Markets',     alias:'emergentes emerging mercados emergentes' },
+  { sym:'EEM',  index:'Emerging Markets',     alias:'emergentes emerging msci' },
+  { sym:'VGT',  index:'US Technology',        alias:'tecnologia technology tech informatica' },
+  { sym:'XLK',  index:'Technology Sector',    alias:'tecnologia technology tech sector' },
+  { sym:'SCHD', index:'US Dividend',          alias:'dividendos dividend dividendo reparto' },
+  { sym:'VYM',  index:'High Dividend',        alias:'dividendos dividend alto rendimiento' },
+  { sym:'VUG',  index:'US Growth',            alias:'crecimiento growth' },
+  { sym:'VTV',  index:'US Value',             alias:'valor value' },
+  { sym:'BND',  index:'US Bonds',             alias:'bonos bonds renta fija deuda' },
+  { sym:'AGG',  index:'US Bonds',             alias:'bonos bonds renta fija aggregate' },
+  { sym:'VNQ',  index:'US Real Estate',       alias:'bienes raices inmobiliario real estate reits' },
+  { sym:'GLD',  index:'Gold',                 alias:'oro gold metales' },
+  { sym:'SLV',  index:'Silver',               alias:'plata silver metales' }
+];
+
+const INDEX_BY_SYM = Object.fromEntries(INDEXES.map(i => [i.sym, i]));
+
+/** The index a fund tracks, when it is one we curate. */
+export function indexOf(symbol){ return INDEX_BY_SYM[symbol] || null; }
+
+/** Fold accents, punctuation and spacing so "S&P 500" matches "sp500". */
+function norm(s){
+  return String(s).toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/&/g, '').replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+
+/** Index trackers whose alias matches the query, best first. */
+export function matchIndexes(q){
+  const n = norm(q);
+  if (!n) return [];
+  const nospace = n.replace(/ /g, '');
+  const out = [];
+  for (const it of INDEXES){
+    const terms = norm(it.alias).split(' ').concat(norm(it.index).split(' '));
+    const joined = terms.join(' ');
+    let score = null;
+    if (terms.includes(n) || norm(it.index) === n) score = 0;
+    else if (terms.some(t => t === nospace)) score = 0;
+    else if (joined.includes(n)) score = 1;
+    else if (norm(it.index).replace(/ /g, '').includes(nospace)) score = 1;
+    else if (terms.some(t => t.startsWith(n))) score = 2;
+    if (score !== null) out.push([score, it]);
+  }
+  return out.sort((a, b) => a[0] - b[0]).map(x => x[1]);
+}
+
 export const POPULAR = ['VOO','SPY','QQQ','VTI','VT','IVV','SCHD','VGT','VXUS','BND','AAPL','MSFT','NVDA','AMZN','GOOGL','META','TSLA','BRK.B','JPM','KO'];
 
-/** Ranked search over the catalog: exact symbol > symbol prefix > name match. */
+/**
+ * Ranked search: exact symbol > symbol prefix > name match.
+ *
+ * Index aliases are resolved first and prepended, because the plain text scan
+ * stops early on broad queries and the catalog is alphabetical — QQQ and VOO
+ * would be cut off long before the scan reached them.
+ */
 export function search(q, { filter = 'all', limit = 60 } = {}){
   if (!catalog) return [];
   const Q = q.trim().toUpperCase();
   if (!Q){
     return catalog.filter(r => POPULAR.includes(r.symbol) && passes(r, filter)).slice(0, limit);
   }
-  const out = [];
+
+  const picked = new Set();
+  const head = [];
+  for (const it of matchIndexes(q)){
+    const row = lookup(it.sym);
+    if (row && passes(row, filter) && !picked.has(row.symbol)){
+      picked.add(row.symbol);
+      head.push(row);
+    }
+  }
+
+  const rest = [];
   for (const r of catalog){
-    if (!passes(r, filter)) continue;
+    if (picked.has(r.symbol) || !passes(r, filter)) continue;
     let score = -1;
     if (r.symbol === Q) score = 0;
     else if (r.symbol.startsWith(Q)) score = 1;
@@ -224,12 +313,16 @@ export function search(q, { filter = 'all', limit = 60 } = {}){
     else if (r.name && r.name.toUpperCase().includes(Q)) score = 3;
     else if (r.symbol.includes(Q)) score = 4;
     if (score >= 0){
-      out.push([score, r]);
-      if (out.length > 900) break;
+      rest.push([score, r]);
+      if (rest.length > 1500) break;
     }
   }
-  out.sort((a,b) => a[0] - b[0] || a[1].symbol.length - b[1].symbol.length || a[1].symbol.localeCompare(b[1].symbol));
-  return out.slice(0, limit).map(x => x[1]);
+  rest.sort((a, b) => a[0] - b[0]
+    || a[1].symbol.length - b[1].symbol.length
+    || a[1].name.length - b[1].name.length      // "APPLE INC" beats a longer name
+    || a[1].symbol.localeCompare(b[1].symbol));
+
+  return head.concat(rest.map(x => x[1])).slice(0, limit);
 }
 
 function passes(r, filter){

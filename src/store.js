@@ -26,6 +26,7 @@ export const DEFAULT_STATE = () => ({
     divExtraRate: 10,            // % — LISR art. 142 fr. V
     cashApy: 0,                  // % annual yield paid on idle cash
     autoPayTax: false,
+    salarySim: { amount: '', currency: 'MXN', freq: 'monthly' },   // salary calculator inputs
     tables: DEFAULT_TABLES
   },
   cash: 0,

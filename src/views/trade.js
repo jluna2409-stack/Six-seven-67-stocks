@@ -1,5 +1,5 @@
 import { get } from '../store.js';
-import { search, loadCatalog, catalogInfo, catalogReady, quotes, isFund, refreshQuotes } from '../market.js';
+import { search, loadCatalog, catalogInfo, catalogReady, quotes, isFund, refreshQuotes, INDEXES, indexOf } from '../market.js';
 import { positions } from '../engine.js';
 import { t } from '../i18n.js';
 import { usd, esc, num, signedPct, cls } from '../format.js';
@@ -21,6 +21,11 @@ export default function trade(host){
         <button class="chip ${filter==='etf'?'active':''}" data-f="etf">${esc(t('tr.filterEtf'))}</button>
       </div>
       <div class="tiny muted" id="cat-info" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card" id="idxcard">
+      <h3 class="card-title">${esc(t('tr.indexes'))}${helpBtn('indexes')}</h3>
+      <div class="idxgrid" id="idxgrid"></div>
     </div>
 
     <div class="card" id="holdcard" hidden>
@@ -59,12 +64,14 @@ export default function trade(host){
   function renderResults(){
     if (!catalogReady()){ $('#results').innerHTML = `<div class="empty">…</div>`; return; }
     const rows = search(query, { filter, limit: 80 });
+    $('#idxcard').hidden = !!query;
     $('#res-title').textContent = query ? `${rows.length}${rows.length >= 80 ? '+' : ''} ${t('tr.catalog')}` : t('tr.popular');
     $('#results').innerHTML = rows.length ? rows.map(r => {
       const q = quotes[r.symbol];
+      const ix = indexOf(r.symbol);
       return `<div class="res-item" data-sym="${esc(r.symbol)}">
         <span class="res-sym">${esc(r.symbol)}</span>
-        <span class="badge ${isFund(r.type)?'etf':'stock'}">${isFund(r.type)?'ETF':'STK'}</span>
+        <span class="badge ${ix ? 'idx' : isFund(r.type) ? 'etf' : 'stock'}">${ix ? esc(ix.index) : isFund(r.type) ? 'ETF' : 'STK'}</span>
         <span class="res-name">${esc(r.name)}</span>
         <span class="num small" style="min-width:78px;text-align:right">${q?.c ? usd(q.c) : ''}</span>
       </div>`;
@@ -97,6 +104,20 @@ export default function trade(host){
     openTrade(el.dataset.sym, 'buy', () => { renderHolds(); });
   });
 
+  function renderIndexes(){
+    const seen = new Set();
+    const rows = INDEXES.filter(i => {
+      if (seen.has(i.index)) return false;      // one fund per index on the shelf
+      seen.add(i.index); return true;
+    });
+    $('#idxgrid').innerHTML = rows.map(i => `
+      <button class="idx-chip" data-sym="${esc(i.sym)}">
+        <span class="ix-name">${esc(i.index)}</span>
+        <span class="ix-sym">${esc(i.sym)}</span>
+      </button>`).join('');
+  }
+
+  renderIndexes();
   renderHolds();
   info();
   if (!catalogReady()) loadCatalog().then(() => { info(); renderResults(); }).catch(() => {

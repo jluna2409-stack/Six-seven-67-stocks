@@ -29,7 +29,7 @@ export const DICT = {
     'tr.confirmSell':'Confirmar venta','tr.noCash':'Efectivo insuficiente','tr.noShares':'No tienes suficientes títulos',
     'tr.bought':'Compra ejecutada','tr.sold':'Venta ejecutada','tr.pickSymbol':'Elige un instrumento',
     'tr.catalog':'instrumentos disponibles','tr.filterAll':'Todos','tr.filterStock':'Acciones','tr.filterEtf':'ETFs / Indexados',
-    'tr.popular':'Populares','tr.noresults':'Sin resultados','tr.realizedGain':'Ganancia realizada en esta venta',
+    'tr.popular':'Populares','tr.indexes':'Índices principales','tr.noresults':'Sin resultados','tr.realizedGain':'Ganancia realizada en esta venta',
     'tr.fractional':'Se permiten fracciones','tr.lastPrice':'Último precio','tr.stale':'Precio no disponible; actualiza.',
 
     'cash.title':'Efectivo','cash.balance':'Saldo en efectivo','cash.deposit':'Depositar','cash.withdraw':'Retirar',
@@ -44,7 +44,7 @@ export const DICT = {
     'cash.resume':'Reanudar','cash.delete':'Eliminar','cash.noRecurring':'Sin ingresos recurrentes configurados.',
     'cash.applied':'Se aplicaron {n} depósitos programados','cash.autoInfo':'Los depósitos programados se aplican solos cada vez que abres la app (incluye los atrasados).',
     'cash.deposited':'Depósito registrado','cash.withdrawn':'Retiro registrado','cash.insufficient':'Saldo insuficiente',
-    'cash.simSalary':'Simular salario','cash.netPreview':'Neto estimado','cash.isrRet':'ISR retenido',
+    'cash.simSalary':'Simular salario','cash.simToRecurring':'Guardar como ingreso recurrente','cash.simSaved':'Guardado','cash.simNeedAmount':'Captura un monto primero','cash.netPreview':'Neto estimado','cash.isrRet':'ISR retenido',
     'cash.imss':'IMSS trabajador','cash.subsidy':'Subsidio al empleo','cash.perYear':'al año',
     'cash.currency':'Moneda del monto','cash.pegged':'anclado a pesos','cash.pegHelp':'El monto queda fijo en pesos: cada depósito se convierte con el tipo de cambio de ese día, así que si el peso se mueve sigues cobrando lo mismo en pesos. Los depósitos atrasados usan el tipo de cambio que aplicaba en su fecha.','cash.pegUsdHelp':'El monto queda fijo en dólares, sin importar cómo se mueva el peso.','cash.yield':'Rendimiento anual del efectivo','cash.interest':'Interés','cash.name':'Nombre',
 
@@ -142,7 +142,7 @@ export const DICT = {
     'tr.confirmSell':'Confirm sell','tr.noCash':'Not enough cash','tr.noShares':'Not enough shares',
     'tr.bought':'Buy executed','tr.sold':'Sell executed','tr.pickSymbol':'Pick an instrument',
     'tr.catalog':'instruments available','tr.filterAll':'All','tr.filterStock':'Stocks','tr.filterEtf':'ETFs / Index funds',
-    'tr.popular':'Popular','tr.noresults':'No results','tr.realizedGain':'Realized gain on this sale',
+    'tr.popular':'Popular','tr.indexes':'Major indexes','tr.noresults':'No results','tr.realizedGain':'Realized gain on this sale',
     'tr.fractional':'Fractional shares allowed','tr.lastPrice':'Last price','tr.stale':'Price unavailable; refresh.',
 
     'cash.title':'Cash','cash.balance':'Cash balance','cash.deposit':'Deposit','cash.withdraw':'Withdraw',
@@ -157,7 +157,7 @@ export const DICT = {
     'cash.resume':'Resume','cash.delete':'Delete','cash.noRecurring':'No recurring income configured.',
     'cash.applied':'{n} scheduled deposits applied','cash.autoInfo':'Scheduled deposits are applied automatically every time you open the app (missed ones included).',
     'cash.deposited':'Deposit recorded','cash.withdrawn':'Withdrawal recorded','cash.insufficient':'Insufficient balance',
-    'cash.simSalary':'Simulate salary','cash.netPreview':'Estimated net','cash.isrRet':'Income tax withheld',
+    'cash.simSalary':'Simulate salary','cash.simToRecurring':'Save as recurring income','cash.simSaved':'Saved','cash.simNeedAmount':'Enter an amount first','cash.netPreview':'Estimated net','cash.isrRet':'Income tax withheld',
     'cash.imss':'Social security (worker)','cash.subsidy':'Employment subsidy','cash.perYear':'per year',
     'cash.currency':'Amount currency','cash.pegged':'pegged to pesos','cash.pegHelp':'The amount stays fixed in pesos: each deposit converts at that day\u2019s rate, so you keep earning the same in pesos as the peso moves. Missed deposits use the rate that applied on their own date.','cash.pegUsdHelp':'The amount stays fixed in dollars, whatever the peso does.','cash.yield':'Annual yield on cash','cash.interest':'Interest','cash.name':'Name',
 

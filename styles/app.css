@@ -56,12 +56,21 @@ button,input,select,textarea{font-family:inherit;color:inherit}
   background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:saturate(180%) blur(20px);
   border-top:1px solid var(--bg-hair);
 }
+.tabbar-in{display:flex;justify-content:center;gap:2px;width:100%}
 .tabbar button{flex:1 1 0;max-width:130px;background:none;border:0;color:var(--tx3);display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;cursor:pointer;border-radius:12px}
 .tabbar button .ti{font-size:17px;line-height:1}
 .tabbar button .tl{font-size:10.5px;font-weight:600;letter-spacing:.01em}
 .tabbar button.active{color:var(--accent)}
 @media(min-width:900px){
-  .tabbar{position:sticky;top:53px;bottom:auto;max-width:1120px;margin:0 auto;border-top:0;border-bottom:1px solid var(--bg-hair);background:transparent;backdrop-filter:none;padding:8px 16px}
+  .tabbar{
+    position:sticky;top:52px;bottom:auto;z-index:29;
+    justify-content:flex-start;gap:4px;
+    border-top:0;border-bottom:1px solid var(--bg-hair);
+    background:color-mix(in srgb,var(--bg) 82%,transparent);
+    backdrop-filter:saturate(180%) blur(20px);
+    padding:8px 16px;
+  }
+  .tabbar-in{max-width:1120px;margin:0 auto;width:100%;display:flex;gap:4px}
   .tabbar button{flex:0 0 auto;flex-direction:row;gap:7px;padding:7px 13px}
   .tabbar button .tl{font-size:13px}
   .tabbar button.active{background:var(--bg-elev);color:var(--tx)}
@@ -179,7 +188,7 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
 .tbl{width:100%;border-collapse:collapse;font-size:13.5px}
 .tbl th{text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx2);padding:8px 6px;border-bottom:1px solid var(--bg-hair);font-weight:700}
 .tbl th:first-child,.tbl td:first-child{text-align:left}
-.tbl td{padding:9px 6px;border-bottom:1px solid var(--bg-hair)}
+.tbl td{padding:9px 6px;border-bottom:1px solid var(--bg-hair);text-align:right}
 .tbl tr:last-child td{border-bottom:0}
 .tbl tfoot td{font-weight:700;border-top:1px solid var(--bg-hair)}
 .scrollx{overflow-x:auto;margin:0 -16px;padding:0 16px}
@@ -285,3 +294,17 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
 .list-item .mark,.list-item .mark-wrap{margin-right:2px}
 .res-item .mark,.res-item .mark-wrap{margin-right:2px}
 .tbl .mark,.tbl .mark-wrap{vertical-align:middle;margin-right:7px}
+
+/* ---------- Index shelf ---------- */
+.idxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(146px,1fr));gap:8px}
+.idx-chip{
+  display:flex;flex-direction:column;align-items:flex-start;gap:3px;
+  background:var(--bg-elev2);border:1px solid transparent;border-radius:12px;
+  padding:10px 12px;cursor:pointer;text-align:left;color:var(--tx);transition:.15s
+}
+.idx-chip:hover{border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
+.idx-chip:active{transform:scale(.98)}
+.idx-chip .ix-name{font-size:13px;font-weight:650;letter-spacing:-.01em}
+.idx-chip .ix-sym{font-size:11.5px;font-weight:700;color:var(--accent);letter-spacing:.03em}
+.badge.idx{background:color-mix(in srgb,var(--accent) 20%,transparent);color:var(--accent);
+  white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis}

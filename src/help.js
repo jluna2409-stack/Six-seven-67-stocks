@@ -233,6 +233,18 @@ export const TOPICS = {
        <p><b>Careful:</b> clearing site data, using private mode, or switching browsers or devices loses it.</p>
        <p>That is what <b>Export backup</b> is for: it downloads a .json you can import into any other browser to pick up where you left off. Do it now and then.</p>`]
   },
+  indexes: {
+    es: ['Índices principales',
+      `Un <b>índice</b> es una lista de empresas que se mide en conjunto: el S&P 500 son las 500 empresas más grandes de EE. UU., el Nasdaq 100 las 100 más grandes que cotizan en el Nasdaq.
+       <p>Un índice no se puede comprar directamente. Lo que compras es un <b>ETF que lo replica</b>: VOO sigue al S&P 500, QQQ al Nasdaq 100. Por eso este atajo te lleva del nombre del índice al ETF que lo sigue.</p>
+       <p><b>Por qué no los encontrabas buscando:</b> el catálogo guarda el nombre legal del fondo, y ése casi nunca menciona el índice. QQQ está registrado como <i>"INVESCO QQQ TRUST SERIES 1"</i> — la palabra "Nasdaq" no aparece por ningún lado. Ahora la búsqueda entiende los nombres populares en español y en inglés: escribe <i>nasdaq</i>, <i>s&p 500</i>, <i>dow jones</i>, <i>oro</i>, <i>emergentes</i> o <i>bonos</i>.</p>
+       <p>Para invertir a largo plazo, un ETF de índice amplio es la opción habitual: compras cientos de empresas de una vez, sin tener que elegir cuál.</p>`],
+    en: ['Major indexes',
+      `An <b>index</b> is a list of companies measured together: the S&P 500 is the 500 largest U.S. companies, the Nasdaq 100 the 100 largest on the Nasdaq.
+       <p>You cannot buy an index directly. What you buy is an <b>ETF that tracks it</b>: VOO tracks the S&P 500, QQQ the Nasdaq 100. This shelf takes you from the index name to the fund that follows it.</p>
+       <p><b>Why search used to miss them:</b> the catalog stores each fund's legal name, which rarely mentions the index. QQQ is filed as <i>"INVESCO QQQ TRUST SERIES 1"</i> — the word "Nasdaq" appears nowhere. Search now understands the popular names in Spanish and English: try <i>nasdaq</i>, <i>s&p 500</i>, <i>dow jones</i>, <i>gold</i>, <i>emerging</i> or <i>bonds</i>.</p>
+       <p>For long-term investing a broad index ETF is the usual choice: you buy hundreds of companies at once without picking any.</p>`]
+  },
   trade: {
     es: ['Cómo comprar y vender',
       `Busca por símbolo (VOO, AAPL) o por nombre. El filtro te deja ver solo <b>ETFs / indexados</b> o solo acciones.
