@@ -16,6 +16,7 @@ const RANGES = [['1D',1],['1W',7],['1M',30],['3M',90],['6M',180],['1Y',365],['AL
 let range = localStorage.getItem('bolsa-sim/range') || '1M';
 let divScope = 'year';
 let scanning = false;   // guards against two sweeps racing and paying twice
+let lastForced = 0;     // a fresh sweep costs one request per position; don't let taps stack
 
 // Intraday samples so the chart is alive on day one; kept for the session and
 // restored on reload so today's curve is not lost when the tab is refreshed.
@@ -364,22 +365,37 @@ export default function dashboard(host){
       }
     }
     if (scanning) return;
+    // Each forced sweep spends one request per position out of 25 a day, so
+    // repeated taps fall back to the cached answer instead of draining it.
+    const forceNet = !quiet && (Date.now() - lastForced > 60_000);
+    if (!quiet) lastForced = Date.now();
     scanning = true;
+    const btn = host.querySelector('[data-divscan]');
+    if (btn && !quiet){ btn.disabled = true; btn.textContent = t('dv.checking'); }
+    const restore = () => {
+      scanning = false;
+      if (btn && !quiet){ btn.disabled = false; btn.textContent = t('dv.check'); }
+    };
     // Marked before the await: two views mounting in the same tick would both
     // pass the check and spend the budget twice.
     update(st => { st.lastDivScan = dayKey(); }, { silent:true });
     if (!quiet) box.innerHTML = `<div class="tiny muted" style="margin-bottom:12px">${esc(t('dv.checking'))}</div>`;
 
     let scan;
-    try { scan = await scanDividends(get(), { force: !quiet }); }
-    catch { box.innerHTML = ''; return; }
-    finally { scanning = false; }
+    try { scan = await scanDividends(get(), { force: forceNet }); }
+    catch { box.innerHTML = ''; restore(); return; }
+    restore();
 
     if (scan.limited){
       box.innerHTML = quiet ? '' : `<div class="note" style="margin-bottom:14px">${esc(t('dv.limit'))}</div>`;
+      if (!quiet) toast(t('dv.limitShort'), 'err');
       return;
     }
     paintScan(scan.pending, scan.upcoming[0] || null);
+    // Without this the button looks dead whenever the answer has not changed.
+    if (!quiet) toast(scan.pending.length
+      ? t('dv.recordedFound', { n: scan.pending.length })
+      : t('dv.noneShort'), 'ok');
   }
 
   /* ---- pick which holding paid the dividend ---- */

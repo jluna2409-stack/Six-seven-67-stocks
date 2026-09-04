@@ -350,7 +350,7 @@ export async function fetchDividendHistory(symbol, { maxAgeMs = 20 * 3600_000, f
   if (!s.avKey) return null;
 
   const cached = get().divHistory?.[symbol];
-  if (cached && Date.now() - cached.at < maxAgeMs) return cached.rows;
+  if (!force && cached && Date.now() - cached.at < maxAgeMs) return cached.rows;
 
   // The free tier allows 25 requests a day. Once it says no, asking again only
   // burns nothing and returns nothing, so stand down until tomorrow.
