@@ -26,6 +26,7 @@ export default function settingsView(host, ctx){
         <div class="row small" style="margin:6px 0 12px">
           <span class="muted">${esc(t('set.catalogInfo', { n: c.count.toLocaleString(), e: c.etfs.toLocaleString(), d: c.generated }))}</span>
         </div>
+        ${switchRow(t('dv.auto'), 'autoDividends', s.autoDividends, t('dv.autoHelp'))}
         <button class="btn sec" id="refcat">${esc(t('set.refreshCatalog'))}</button>
       </div>
 
@@ -99,6 +100,7 @@ export default function settingsView(host, ctx){
         const o = st.settings;
         o.apiKey = g('apiKey').value.trim();
         o.avKey = g('avKey').value.trim();
+        o.autoDividends = g('autoDividends').checked;
         o.commissionPct = Number(g('commissionPct').value || 0);
         o.commissionMin = Number(g('commissionMin').value || 0);
         o.costMethod = g('costMethod').value;

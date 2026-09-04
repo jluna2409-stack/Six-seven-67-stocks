@@ -26,6 +26,7 @@ export const DEFAULT_STATE = () => ({
     divExtraRate: 10,            // % — LISR art. 142 fr. V
     cashApy: 0,                  // % annual yield paid on idle cash
     autoPayTax: false,
+    autoDividends: false,        // record detected dividends without asking
     salarySim: { amount: '', currency: 'MXN', freq: 'monthly' },   // salary calculator inputs
     tables: DEFAULT_TABLES
   },
@@ -37,6 +38,7 @@ export const DEFAULT_STATE = () => ({
   snapshots: [],        // [{d,nw,cash,invested,contrib}]
   taxPaid: {},          // year -> USD paid
   profiles: {},         // SYM -> issuer profile from Finnhub (name, logo, exchange)
+  divHistory: {},       // SYM -> announced dividends from Alpha Vantage
   fxHistory: {},        // 'YYYY-MM-DD' -> USD/MXN, for back-dated conversions
   lastRun: 0,           // last time scheduler ran
   lastInterestDay: dayKey()
@@ -70,6 +72,7 @@ function migrate(s){
   for (const k of ['transactions','recurring','realized','snapshots']) out[k] = Array.isArray(s[k]) ? s[k] : [];
   out.fxHistory = { ...(s.fxHistory || {}) };
   out.profiles = { ...(s.profiles || {}) };
+  out.divHistory = { ...(s.divHistory || {}) };
   // schedules created before amounts carried a currency were stored in USD
   out.recurring = out.recurring.map(r => ({ ...r, currency: r.currency || 'USD' }));
   out.schema = SCHEMA;

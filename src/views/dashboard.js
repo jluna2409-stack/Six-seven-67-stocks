@@ -6,10 +6,11 @@ import { usd, usdCompact, signedUsd, signedPct, pct, cls, esc, dayKeyToTs, dateL
 import { lineChart, donut, PALETTE } from '../charts.js';
 import { latentTax } from '../taxreport.js';
 import { helpBtn } from '../help.js';
-import { sheet } from '../ui.js';
+import { sheet, toast } from '../ui.js';
 import { openDividend } from './tradesheet.js';
 import { alerts, daysUntil } from '../obligations.js';
 import { mark, bestName } from '../instrument.js';
+import { scanDividends, recordAll, recordDetected } from '../dividends.js';
 
 const RANGES = [['1D',1],['1W',7],['1M',30],['3M',90],['6M',180],['1Y',365],['ALL',1e6]];
 let range = localStorage.getItem('bolsa-sim/range') || '1M';
@@ -86,10 +87,12 @@ export default function dashboard(host){
       <div class="row" style="margin-bottom:12px">
         <h3 class="card-title" style="margin:0">${esc(t('div.title'))}${helpBtn('dividends')}</h3>
         <div class="pillrow">
+          <button class="chip" data-divscan>${esc(t('dv.check'))}</button>
           <button class="chip active" data-dv="year">${esc(t('div.thisYear'))}</button>
           <button class="chip" data-dv="all">${esc(t('div.allTime'))}</button>
         </div>
       </div>
+      <div id="divscan"></div>
       <div id="divbox"></div>
     </div>
 
@@ -104,6 +107,7 @@ export default function dashboard(host){
     <div class="card">
       <h3 class="card-title">${esc(t('dash.positions'))}</h3>
       <div class="list" id="poslist"></div>
+      <div id="lathint"></div>
     </div>`;
 
   const $ = id => host.querySelector('#' + id);
@@ -117,6 +121,7 @@ export default function dashboard(host){
       pickDividendSymbol(rows);
       return;
     }
+    if (e.target.closest('[data-divscan]')){ runScan(); return; }
     const b = e.target.closest('[data-dv]'); if (!b) return;
     divScope = b.dataset.dv;
     host.querySelectorAll('[data-dv]').forEach(c => c.classList.toggle('active', c.dataset.dv === divScope));
@@ -220,15 +225,11 @@ export default function dashboard(host){
         </div>
       </button>`).join('') : `<div class="empty">${esc(t('dash.emptyPos'))}</div>`;
 
-    // ---- tax hint
+    // ---- tax hint (rewritten in place; appending here duplicated it on every redraw)
     const lat = latentTax(T.unrealized);
-    if (lat > 0){
-      const hint = document.createElement('div');
-      hint.className = 'note info';
-      hint.style.marginTop = '2px';
-      hint.innerHTML = `${esc(t('tax.estUnrealized'))}${helpBtn('latent')}: <strong class="num">${usd(lat)}</strong> — ${esc(t('tax.unrealizedNote'))}`;
-      $('poslist').after(hint);
-    }
+    $('lathint').innerHTML = lat > 0
+      ? `<div class="note info" style="margin-top:12px">${esc(t('tax.estUnrealized'))}${helpBtn('latent')}: <strong class="num">${usd(lat)}</strong> — ${esc(t('tax.unrealizedNote'))}</div>`
+      : '';
   }
 
   function card(k, v, d, c = '', help = ''){
@@ -295,6 +296,62 @@ export default function dashboard(host){
       </button>`;
   }
 
+  /* ---- look up announced dividends and offer the ones you earned ---- */
+  async function runScan({ quiet = false } = {}){
+    const box = $('divscan');
+    if (!get().settings.avKey){
+      box.innerHTML = quiet ? '' : `<div class="note" style="margin-bottom:14px">${esc(t('dv.needKey'))}</div>`;
+      return;
+    }
+    if (!quiet) box.innerHTML = `<div class="tiny muted" style="margin-bottom:12px">${esc(t('dv.checking'))}</div>`;
+    let scan;
+    try { scan = await scanDividends(); } catch { box.innerHTML = ''; return; }
+
+    if (scan.limited){ box.innerHTML = `<div class="note" style="margin-bottom:14px">${esc(t('dv.limit'))}</div>`; return; }
+    if (!scan.pending.length){
+      const next = scan.upcoming[0];
+      box.innerHTML = quiet && !next ? ''
+        : `<div class="note info" style="margin-bottom:14px">${esc(t('dv.none'))}${next
+            ? ` · ${esc(t('dv.upcoming'))}: <b>${esc(next.symbol)}</b> ${usd(next.gross)} — ${esc(t('dv.willPay'))} ${dateLong(new Date(next.payDate + 'T12:00:00'))}`
+            : ''}</div>`;
+      return;
+    }
+
+    const total = scan.pending.reduce((a, d) => a + d.gross, 0);
+    box.innerHTML = `
+      <div class="card tight" style="background:color-mix(in srgb,var(--up) 12%,var(--bg-elev2));border:1px solid color-mix(in srgb,var(--up) 35%,transparent);margin-bottom:14px">
+        <div class="row" style="margin-bottom:10px">
+          <strong>${esc(scan.pending.length > 1
+            ? t('dv.foundN', { n: scan.pending.length })
+            : t('dv.found', { n: 1 }))}</strong>
+          <span class="num up" style="font-weight:700">${usd(total)}</span>
+        </div>
+        <div class="list">${scan.pending.map((d, i) => `
+          <div class="list-item" style="cursor:default;padding:9px 0">
+            <div class="li-main">
+              <div class="li-t">${esc(d.symbol)}</div>
+              <div class="li-s">${usd(d.perShare)} ${esc(t('dv.perShare'))} × ${num(d.qty, 4)} · ${esc(t('dv.paidOn'))} ${dateLong(new Date(d.payDate + 'T12:00:00'))}</div>
+            </div>
+            <div class="li-r" style="display:flex;align-items:center;gap:8px">
+              <div class="li-v num">${usd(d.gross)}</div>
+              <button class="btn sm" data-divone="${i}">+</button>
+            </div>
+          </div>`).join('')}</div>
+        <button class="btn" data-divall style="margin-top:12px">${esc(t('dv.recordAll'))} — ${usd(total)}</button>
+      </div>`;
+
+    box.querySelector('[data-divall]').onclick = () => {
+      const n = recordAll(scan.pending);
+      toast(t('dv.recorded', { n }), 'ok');
+      draw(); runScan({ quiet:true });
+    };
+    box.querySelectorAll('[data-divone]').forEach(b => b.onclick = () => {
+      recordDetected(scan.pending[Number(b.dataset.divone)]);
+      toast(t('act.done'), 'ok');
+      draw(); runScan({ quiet:true });
+    });
+  }
+
   /* ---- pick which holding paid the dividend ---- */
   function pickDividendSymbol(rows){
     if (rows.length === 1){ openDividend(rows[0].symbol, draw); return; }
@@ -352,6 +409,7 @@ export default function dashboard(host){
   }
 
   draw();
+  runScan({ quiet:true });   // silent on load; only speaks up if something is owed
 
   return {
     tick(){

@@ -163,13 +163,18 @@ export function withdraw(amount, { note = '', emergency = false } = {}){
 }
 
 /** Foreign dividend: gross is taxed 10% in the US at source; the net is credited. */
-export function dividend({ symbol, gross, note = '' }){
+export function dividend({ symbol, gross, note = '', ts = null, exDate = null, perShare = null, qty = null }){
   const s = settings();
   const wh = gross * (s.divUsRate / 100);
   const net = gross - wh;
   update(st => {
     st.cash += net;
-    addTx({ type: TX.DIVIDEND, symbol, amount: net, gross, withheld: wh, note });
+    const row = addTx({ type: TX.DIVIDEND, symbol, amount: net, gross, withheld: wh, note });
+    // A detected payment is dated when it was actually paid, not when it was found,
+    // so it lands in the right month for the tax calendar.
+    if (ts) row.ts = ts;
+    if (exDate){ row.exDate = exDate; row.perShare = perShare; row.qty = qty; }
+    st.transactions.sort((a, b) => a.ts - b.ts);
   }, { reason:'cash' });
   return { net, withheld: wh };
 }

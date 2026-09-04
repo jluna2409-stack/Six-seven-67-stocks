@@ -336,6 +336,57 @@ export function lookup(symbol){
   return catalog.find(r => r.symbol === symbol) || null;
 }
 
+/* --------------------------- dividend history ---------------------- */
+
+/**
+ * Announced dividends for a symbol: ex-date, payment date and amount per share.
+ *
+ * Finnhub's dividend feed is a paid endpoint, but Alpha Vantage serves the same
+ * data on its free tier and sends CORS headers, so the browser can read it
+ * directly. Cached for a day per symbol to stay inside the free request budget.
+ */
+export async function fetchDividendHistory(symbol, { maxAgeMs = 20 * 3600_000 } = {}){
+  const s = settings();
+  if (!s.avKey) return null;
+
+  const cached = get().divHistory?.[symbol];
+  if (cached && Date.now() - cached.at < maxAgeMs) return cached.rows;
+
+  const u = new URL('https://www.alphavantage.co/query');
+  u.searchParams.set('function', 'DIVIDENDS');
+  u.searchParams.set('symbol', symbol);
+  u.searchParams.set('apikey', s.avKey);
+
+  let j;
+  try {
+    const r = await fetch(u);
+    if (!r.ok) return cached?.rows || null;
+    j = await r.json();
+  } catch { return cached?.rows || null; }
+
+  // Rate limit or a bad key answer with a note instead of data; keep what we had.
+  if (!j || !Array.isArray(j.data)){
+    if (j && (j.Information || j.Note)) throw new Error('av-limit');
+    return cached?.rows || null;
+  }
+
+  const rows = j.data
+    .map(d => ({
+      exDate: d.ex_dividend_date || '',
+      payDate: d.payment_date && d.payment_date !== 'None' ? d.payment_date : (d.ex_dividend_date || ''),
+      perShare: Number(d.amount)
+    }))
+    .filter(d => d.exDate && isFinite(d.perShare) && d.perShare > 0)
+    .sort((a, b) => a.exDate.localeCompare(b.exDate));
+
+  update(st => {
+    st.divHistory = st.divHistory || {};
+    st.divHistory[symbol] = { at: Date.now(), rows };
+  }, { silent:true });
+
+  return rows;
+}
+
 /* --------------------------- price history ------------------------ */
 
 /**

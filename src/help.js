@@ -68,12 +68,16 @@ export const TOPICS = {
   dividends: {
     es: ['Dividendos',
       `Un dividendo es el <b>reparto de utilidades</b> que algunas empresas y ETFs pagan a sus accionistas, normalmente cada trimestre. Llega como efectivo, sin que vendas nada.
-       <p><b>Cómo se registran aquí:</b> el feed de dividendos de Finnhub es de plan de pago, así que se capturan a mano. Abre una posición → <i>Registrar dividendo</i> y pon el monto <b>bruto</b>. La app descuenta la retención de EE. UU. y abona el neto a tu efectivo.</p>
+       <p><b>Detección automática:</b> el feed de dividendos de Finnhub es de plan de pago, pero Alpha Vantage lo da gratis. Pon su API key en Ajustes → Datos de mercado (tarda 20 segundos y no cuesta) y la app revisa sola, cada vez que la abres, qué dividendos te tocaron: los busca por cada posición, calcula cuántos títulos tenías en la fecha ex-dividendo y te ofrece registrarlos con un clic. En Ajustes puedes activar que se abonen solos, sin preguntarte.</p>
+       <p><b>A mano:</b> también puedes capturarlos tú. Abre una posición → <i>Registrar dividendo</i> y pon el monto <b>bruto</b>. La app descuenta la retención de EE. UU. y abona el neto a tu efectivo.</p>
+       <p><b>La fecha ex-dividendo</b> es la que manda: cobras el dividendo si tenías las acciones <b>antes</b> de esa fecha, aunque las vendas después. El dinero llega en la fecha de pago, semanas más tarde.</p>
        <p>Esta sección te muestra cuánto has ganado <b>solo por dividendos</b>, separado de la ganancia por precio.</p>
        <p><b>Rendimiento sobre costo</b> = dividendos del año ÷ lo que pagaste por esas acciones. Es el "sueldo" anual que te paga tu cartera.</p>`],
     en: ['Dividends',
       `A dividend is a share of profits that some companies and ETFs pay their shareholders, usually quarterly. It arrives as cash without selling anything.
-       <p><b>How they are recorded here:</b> Finnhub's dividend feed is a paid endpoint, so you enter them manually. Open a position → <i>Record dividend</i> and enter the <b>gross</b> amount. The app deducts the U.S. withholding and credits the net to your cash.</p>
+       <p><b>Automatic detection:</b> Finnhub's dividend feed is a paid endpoint, but Alpha Vantage serves it free. Put its API key in Settings → Market data (20 seconds, no cost) and the app checks on every open which dividends you earned: it looks them up per position, works out how many shares you held on the ex-dividend date, and offers them for one click. A setting credits them silently instead.</p>
+       <p><b>By hand:</b> you can still enter them yourself. Open a position → <i>Record dividend</i> and enter the <b>gross</b> amount. The app deducts the U.S. withholding and credits the net to your cash.</p>
+       <p><b>The ex-dividend date rules:</b> you collect the payment if you held the shares <b>before</b> that date, even if you sell afterwards. The cash arrives on the payment date, weeks later.</p>
        <p>This section shows what you earned <b>from dividends alone</b>, separate from price gains.</p>
        <p><b>Yield on cost</b> = dividends this year ÷ what you paid for those shares — the annual "salary" your portfolio pays you.</p>`]
   },

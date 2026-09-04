@@ -5,6 +5,7 @@ import { snapshot, accrueCashInterest, deposit, totalsFor } from './engine.js';
 import { runDue } from './scheduler.js';
 import { startFx, refreshFx } from './fx.js';
 import { autoPayDue, alerts } from './obligations.js';
+import { autoRecordDividends } from './dividends.js';
 import { toast, sheet, field, moneyInput, selectInput } from './ui.js';
 import { installHelp } from './help.js';
 import { esc, usd } from './format.js';
@@ -142,6 +143,11 @@ async function boot(){
   const autopaid = autoPayDue();
   if (applied.length) setTimeout(() => toast(t('cash.applied', { n: applied.length }), 'ok'), 700);
   if (autopaid.length) setTimeout(() => toast(t('ob.autoPaid', { n: autopaid.length }), 'ok'), 1400);
+  autoRecordDividends().then(done => {
+    if (!done.length) return;
+    toast(t('dv.autoDone', { n: done.length }), 'ok');
+    if (current?.refresh) current.refresh();
+  }).catch(() => {});
 
   go(location.hash.slice(1) || 'dashboard');
   if (!get().onboarded) setTimeout(onboard, 300);
