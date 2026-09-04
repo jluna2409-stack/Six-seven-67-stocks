@@ -2,14 +2,36 @@ import { esc } from './format.js';
 import { t } from './i18n.js';
 
 /* ------------------------------- toast ---------------------------- */
+const MAX_TOASTS = 3;
+const LIFE_MS = 2600;
+
+function dismiss(el){
+  clearTimeout(el._timer);
+  el.classList.remove('on');
+  setTimeout(() => el.remove(), 260);
+}
+
 export function toast(msg, kind = ''){
   const root = document.getElementById('toast-root');
+
+  // Repeating the same message restarts the one on screen instead of stacking a
+  // copy: tapping a button several times should not bury the page in banners.
+  const twin = [...root.children].find(c => c.textContent === msg && !c._closing);
+  if (twin){
+    clearTimeout(twin._timer);
+    twin._timer = setTimeout(() => { twin._closing = true; dismiss(twin); }, LIFE_MS);
+    return;
+  }
+
+  // Hard ceiling, so a burst of different messages still cannot fill the screen.
+  while (root.children.length >= MAX_TOASTS) dismiss(root.firstElementChild);
+
   const el = document.createElement('div');
   el.className = 'toast ' + kind;
   el.textContent = msg;
   root.appendChild(el);
   requestAnimationFrame(() => el.classList.add('on'));
-  setTimeout(() => { el.classList.remove('on'); setTimeout(() => el.remove(), 260); }, 2600);
+  el._timer = setTimeout(() => { el._closing = true; dismiss(el); }, LIFE_MS);
 }
 
 /* ------------------------------- sheet ---------------------------- */
