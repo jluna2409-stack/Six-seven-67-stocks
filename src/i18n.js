@@ -90,6 +90,22 @@ export const DICT = {
     'tx.DEPOSIT':'Depósito','tx.WITHDRAW':'Retiro','tx.SALARY':'Salario','tx.BUY':'Compra','tx.SELL':'Venta',
     'tx.DIVIDEND':'Dividendo','tx.TAX':'Pago de ISR','tx.INTEREST':'Interés','tx.FEE':'Comisión',
 
+    'div.title':'Dividendos','div.total':'Total cobrado','div.netPocket':'Neto en tu bolsillo',
+    'div.gross':'Bruto','div.withheld':'Retención EE.UU.','div.yieldCost':'Rendimiento sobre costo',
+    'div.monthly':'Promedio mensual','div.annualised':'Ritmo anual','div.payments':'pagos',
+    'div.none':'Aún no registras dividendos. Abre una posición y usa "Registrar dividendo" cuando tu broker te pague uno.',
+    'div.byPosition':'Por posición','div.thisYear':'Este año','div.allTime':'Histórico',
+    'div.lastPay':'Último pago','div.sold':'ya vendida',
+
+    'hold.title':'Mis acciones y fondos','hold.shares':'títulos','hold.instruments':'instrumentos',
+    'hold.stocks':'Acciones de empresas','hold.funds':'ETFs / índices','hold.what':'Empresa / índice',
+    'hold.value':'Valor','hold.none':'Todavía no tienes títulos.','hold.total':'Total invertido',
+
+    'help.title':'Ayuda e información','help.sub':'Toca un tema para ver cómo funciona.',
+    'help.open':'Ver ayuda',
+    'set.fxAuto':'Actualizar el tipo de cambio automáticamente','set.fxSource':'Fuente',
+    'set.fxNever':'sin actualizar','set.fxNow':'Actualizar ahora','set.fxDaily':'Cotización diaria',
+
     'onb.title':'Bienvenido a Bolsa Sim','onb.sub':'Simulador de inversión a largo plazo con precios reales y régimen fiscal mexicano.',
     'onb.cash':'¿Con cuánto efectivo empiezas? (USD)','onb.start':'Empezar','onb.lang':'Idioma',
     'first.hint':'Todo se guarda en tu navegador. Puedes cerrar y volver en semanas: la simulación continúa.'
@@ -184,6 +200,22 @@ export const DICT = {
 
     'tx.DEPOSIT':'Deposit','tx.WITHDRAW':'Withdrawal','tx.SALARY':'Salary','tx.BUY':'Buy','tx.SELL':'Sell',
     'tx.DIVIDEND':'Dividend','tx.TAX':'Tax payment','tx.INTEREST':'Interest','tx.FEE':'Commission',
+
+    'div.title':'Dividends','div.total':'Total received','div.netPocket':'Net in your pocket',
+    'div.gross':'Gross','div.withheld':'U.S. withholding','div.yieldCost':'Yield on cost',
+    'div.monthly':'Monthly average','div.annualised':'Annual pace','div.payments':'payments',
+    'div.none':'No dividends recorded yet. Open a position and use "Record dividend" when your broker pays one.',
+    'div.byPosition':'By position','div.thisYear':'This year','div.allTime':'All time',
+    'div.lastPay':'Last payment','div.sold':'sold',
+
+    'hold.title':'My shares and funds','hold.shares':'shares','hold.instruments':'instruments',
+    'hold.stocks':'Company stocks','hold.funds':'ETFs / indexes','hold.what':'Company / index',
+    'hold.value':'Value','hold.none':'You do not hold any shares yet.','hold.total':'Total invested',
+
+    'help.title':'Help & information','help.sub':'Tap a topic to see how it works.',
+    'help.open':'Open help',
+    'set.fxAuto':'Refresh the exchange rate automatically','set.fxSource':'Source',
+    'set.fxNever':'never refreshed','set.fxNow':'Refresh now','set.fxDaily':'Daily quote',
 
     'onb.title':'Welcome to Bolsa Sim','onb.sub':'Long-term investing simulator with real prices and the Mexican tax regime.',
     'onb.cash':'How much cash do you start with? (USD)','onb.start':'Start','onb.lang':'Language',

@@ -5,6 +5,7 @@ import { t } from '../i18n.js';
 import { usd, num, esc, signedUsd, signedPct, pct, cls } from '../format.js';
 import { openPosition } from './tradesheet.js';
 import { bars } from '../charts.js';
+import { helpBtn } from '../help.js';
 
 let sortBy = 'value';
 
@@ -14,7 +15,7 @@ export default function portfolio(host){
 
     <div class="card">
       <div class="row" style="margin-bottom:12px">
-        <h3 class="card-title" style="margin:0">${esc(t('pf.title'))}</h3>
+        <h3 class="card-title" style="margin:0">${esc(t('pf.title'))}${helpBtn('trade')}</h3>
         <div class="pillrow">
           <button class="chip ${sortBy==='value'?'active':''}" data-s="value">${esc(t('pf.sortValue'))}</button>
           <button class="chip ${sortBy==='pl'?'active':''}" data-s="pl">${esc(t('pf.sortPL'))}</button>
@@ -25,7 +26,7 @@ export default function portfolio(host){
     </div>
 
     <div class="card">
-      <h3 class="card-title">${esc(t('pf.pl'))}</h3>
+      <h3 class="card-title">${esc(t('pf.pl'))}${helpBtn('realized')}</h3>
       <div id="plbars"></div>
     </div>`;
 

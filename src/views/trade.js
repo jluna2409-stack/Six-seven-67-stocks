@@ -4,6 +4,7 @@ import { positions } from '../engine.js';
 import { t } from '../i18n.js';
 import { usd, esc, num, signedPct, cls } from '../format.js';
 import { openTrade } from './tradesheet.js';
+import { helpBtn } from '../help.js';
 
 let filter = 'all';
 let query = '';
@@ -27,7 +28,7 @@ export default function trade(host){
     </div>
 
     <div class="card">
-      <h3 class="card-title" id="res-title">${esc(t('tr.popular'))}</h3>
+      <h3 class="card-title"><span id="res-title">${esc(t('tr.popular'))}</span>${helpBtn('trade')}</h3>
       <div id="results"></div>
     </div>`;
 

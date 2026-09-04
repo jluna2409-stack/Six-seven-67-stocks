@@ -3,8 +3,9 @@ import { report, activeYears, latentTax } from '../taxreport.js';
 import { totalsFor, payTax } from '../engine.js';
 import { quotes } from '../market.js';
 import { t } from '../i18n.js';
-import { usd, esc, pct, mxn, signedUsd, cls } from '../format.js';
+import { usd, esc, pct, mxn, signedUsd, cls, dateLong } from '../format.js';
 import { confirmSheet, toast } from '../ui.js';
+import { helpBtn } from '../help.js';
 
 let year = new Date().getFullYear();
 
@@ -39,7 +40,7 @@ export default function taxes(host){
         ? `<div class="card"><div class="empty">${esc(t('tax.noData'))}</div></div>` : `
 
       <div class="card">
-        <h3 class="card-title">${esc(t('tax.capgains'))}</h3>
+        <h3 class="card-title">${esc(t('tax.capgains'))}${helpBtn('capgains')}</h3>
         <table class="tbl">
           <tbody>
             <tr><td>${esc(t('tax.gains'))}</td><td class="num up">${usd(r.capGain)}</td></tr>
@@ -57,7 +58,7 @@ export default function taxes(host){
       </div>
 
       <div class="card">
-        <h3 class="card-title">${esc(t('tax.dividends'))}</h3>
+        <h3 class="card-title">${esc(t('tax.dividends'))}${helpBtn('divtax')}</h3>
         <table class="tbl"><tbody>
           <tr><td>${esc(t('tax.divGross'))}</td><td class="num">${usd(r.divGross)}</td></tr>
           <tr><td>${esc(t('tax.divUS'))}</td><td class="num down">−${usd(r.divUsWithheld)}</td></tr>
@@ -69,7 +70,7 @@ export default function taxes(host){
       </div>
 
       <div class="card">
-        <h3 class="card-title">${esc(t('tax.annual'))}</h3>
+        <h3 class="card-title">${esc(t('tax.annual'))}${helpBtn('annual')}</h3>
         <table class="tbl"><tbody>
           <tr><td>${esc(t('tax.salaryGross'))}</td><td class="num">${usd(r.salaryGross)}</td></tr>
           <tr><td>${esc(t('tax.divGross'))}</td><td class="num">${usd(r.divGross)}</td></tr>
@@ -98,7 +99,7 @@ export default function taxes(host){
       </div>`}
 
       <div class="card">
-        <h3 class="card-title">${esc(t('tax.estUnrealized'))}</h3>
+        <h3 class="card-title">${esc(t('tax.estUnrealized'))}${helpBtn('latent')}</h3>
         <div class="row"><span class="muted small">${esc(t('dash.unrealized'))}</span><span class="num ${cls(T.unrealized)}">${signedUsd(T.unrealized)}</span></div>
         <div class="row" style="margin-top:8px"><span class="muted small">${esc(t('tax.estUnrealized'))}</span><span class="num" style="font-weight:700">${usd(latentTax(T.unrealized))}</span></div>
         <div class="note info" style="margin-top:12px">${esc(t('tax.unrealizedNote'))}</div>
@@ -107,7 +108,8 @@ export default function taxes(host){
       <div class="card">
         <h3 class="card-title">${esc(t('tax.tables'))}</h3>
         <div class="row small"><span class="muted">${esc(t('tax.tableYear'))}</span><span class="num">${s.tables.year}</span></div>
-        <div class="row small" style="margin-top:8px"><span class="muted">${esc(t('set.fx'))}</span><span class="num">${s.fx}</span></div>
+        <div class="row small" style="margin-top:8px"><span class="muted">${esc(t('set.fx'))}${helpBtn('fx')}</span>
+          <span class="num">${s.fx}<div class="tiny muted">${esc(s.fxSource || '—')}${s.fxAt ? ' · ' + dateLong(s.fxAt) : ''}</div></span></div>
         <div class="row small" style="margin-top:8px"><span class="muted">UMA</span><span class="num">${mxn(s.tables.uma.monthly)} / ${esc(t('cash.monthly').toLowerCase())}</span></div>
         <div class="note" style="margin-top:12px">${esc(t('tax.disclaimer'))}</div>
       </div>`;

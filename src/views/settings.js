@@ -2,8 +2,10 @@ import { get, update, settings as S, exportBlob, importFromText, resetAll, persi
 import { catalogInfo, refreshCatalog, connectWs } from '../market.js';
 import { DEFAULT_TABLES } from '../tax.js';
 import { t, setLang, getLang } from '../i18n.js';
-import { esc, usd } from '../format.js';
+import { esc, usd, dateTime } from '../format.js';
 import { toast, confirmSheet, field, switchRow, selectInput } from '../ui.js';
+import { refreshFx, fxInfo } from '../fx.js';
+import { helpIndex, helpBtn } from '../help.js';
 
 export default function settingsView(host, ctx){
   function draw(){
@@ -17,7 +19,7 @@ export default function settingsView(host, ctx){
       </div>
 
       <div class="card">
-        <h3 class="card-title">${esc(t('set.market'))}</h3>
+        <h3 class="card-title">${esc(t('set.market'))}${helpBtn('history')}</h3>
         ${field(t('set.apikey'), `<input type="text" name="apiKey" value="${esc(s.apiKey)}" spellcheck="false" />`)}
         ${field(t('set.avkey'), `<input type="text" name="avKey" value="${esc(s.avKey)}" spellcheck="false" placeholder="—" />`, esc(t('set.avHelp')))}
         <div class="row small" style="margin:6px 0 12px">
@@ -27,7 +29,7 @@ export default function settingsView(host, ctx){
       </div>
 
       <div class="card">
-        <h3 class="card-title">${esc(t('set.trading'))}</h3>
+        <h3 class="card-title">${esc(t('set.trading'))}${helpBtn('commission')}</h3>
         <div class="inline-2">
           ${field(t('set.commission'), `<input type="number" step="0.01" min="0" name="commissionPct" value="${s.commissionPct}" />`)}
           ${field(t('set.commissionMin'), `<input type="number" step="0.01" min="0" name="commissionMin" value="${s.commissionMin}" />`)}
@@ -38,8 +40,14 @@ export default function settingsView(host, ctx){
       </div>
 
       <div class="card">
-        <h3 class="card-title">${esc(t('set.taxcfg'))}</h3>
-        ${field(t('set.fx'), `<input type="number" step="0.01" min="1" name="fx" value="${s.fx}" />`, esc(t('set.fxHelp')))}
+        <h3 class="card-title">${esc(t('set.taxcfg'))}${helpBtn('fx')}</h3>
+        ${switchRow(t('set.fxAuto'), 'fxAuto', s.fxAuto !== false)}
+        ${field(t('set.fx'), `<input type="number" step="0.0001" min="1" name="fx" value="${s.fx}" ${s.fxAuto !== false ? 'readonly' : ''} />`, esc(t('set.fxHelp')))}
+        <div class="row tiny muted" style="margin:-4px 0 12px">
+          <span>${esc(t('set.fxSource'))}: ${esc(s.fxSource || '—')} · ${esc(t('set.fxDaily'))}</span>
+          <span>${s.fxAt ? dateTime(s.fxAt) : esc(t('set.fxNever'))}</span>
+        </div>
+        <button class="btn sec" id="fxnow" style="margin-bottom:14px">${esc(t('set.fxNow'))}</button>
         <div class="inline-2">
           ${field(t('set.capRate'), `<input type="number" step="0.1" min="0" name="capRate" value="${s.capRate}" />`)}
           ${field(t('set.divUSRate'), `<input type="number" step="0.1" min="0" name="divUsRate" value="${s.divUsRate}" />`)}
@@ -55,13 +63,21 @@ export default function settingsView(host, ctx){
       </div>
 
       <div class="card">
-        <h3 class="card-title">${esc(t('set.data'))}</h3>
+        <h3 class="card-title">${esc(t('set.data'))}${helpBtn('backup')}</h3>
         <div class="note info" style="margin-bottom:14px">${esc(t('set.storage'))}</div>
         <div class="stack">
           <button class="btn sec" id="exp">${esc(t('set.export'))}</button>
           <button class="btn sec" id="imp">${esc(t('set.import'))}</button>
           <input type="file" id="file" accept="application/json" hidden />
           <button class="btn danger" id="rst">${esc(t('set.reset'))}</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">${esc(t('help.title'))}</h3>
+        <div class="tiny muted" style="margin:-6px 0 10px">${esc(t('help.sub'))}</div>
+        <div class="help-index">
+          ${helpIndex().map(h => `<button data-help="${h.key}">${esc(h.title)}</button>`).join('')}
         </div>
       </div>
 
@@ -86,7 +102,8 @@ export default function settingsView(host, ctx){
         o.costMethod = g('costMethod').value;
         o.cashApy = Number(g('cashApy').value || 0);
         o.fractional = g('fractional').checked;
-        o.fx = Number(g('fx').value || 18);
+        o.fxAuto = g('fxAuto').checked;
+        if (!o.fxAuto) o.fx = Number(g('fx').value || o.fx);
         o.capRate = Number(g('capRate').value || 0);
         o.divUsRate = Number(g('divUsRate').value || 0);
         o.divExtraRate = Number(g('divExtraRate').value || 0);
@@ -102,6 +119,7 @@ export default function settingsView(host, ctx){
       i.addEventListener('change', () => {
         commit();
         if (i.name === 'lang'){ setLang(g('lang').value); ctx.rerender(); return; }
+        if (i.name === 'fxAuto'){ if (g('fxAuto').checked) refreshFx({ force:true }).then(draw); else draw(); return; }
         if (i.name === 'theme'){ ctx.applyTheme(); return; }
         if (i.name === 'apiKey') connectWs();
         toast(t('set.saved'), 'ok');
@@ -121,6 +139,14 @@ export default function settingsView(host, ctx){
     $('#resettbl').onclick = () => {
       update(st => { st.settings.tables = JSON.parse(JSON.stringify(DEFAULT_TABLES)); }, { reason:'settings' });
       toast(t('set.saved'), 'ok'); draw();
+    };
+
+    $('#fxnow').onclick = async () => {
+      $('#fxnow').disabled = true;
+      const r = await refreshFx({ force:true });
+      toast(r ? `1 USD = ${r.rate} MXN` : t('set.importErr'), r ? 'ok' : 'err');
+      $('#fxnow').disabled = false;
+      if (r) draw();
     };
 
     $('#refcat').onclick = async () => {

@@ -3,7 +3,9 @@ import { setLang, getLang, t } from './i18n.js';
 import { connectWs, watch, refreshQuotes, quotes, onTick, onStatus, marketOpen, loadCatalog, getStatus } from './market.js';
 import { snapshot, accrueCashInterest, deposit, totalsFor } from './engine.js';
 import { runDue } from './scheduler.js';
+import { startFx, refreshFx } from './fx.js';
 import { toast, sheet, field, moneyInput, selectInput } from './ui.js';
+import { installHelp } from './help.js';
 import { esc, usd } from './format.js';
 
 import dashboard, { sampleIntraday } from './views/dashboard.js';
@@ -115,6 +117,7 @@ async function boot(){
     applyTheme(); toast(t('set.' + (next === 'system' ? 'themeSystem' : next === 'dark' ? 'themeDark' : 'themeLight')));
   };
 
+  installHelp();
   window.addEventListener('hashchange', () => go(location.hash.slice(1)));
   onStatus(paintStatus);
 
@@ -127,6 +130,7 @@ async function boot(){
   if (!get().onboarded) setTimeout(onboard, 300);
 
   loadCatalog().catch(e => console.warn('catalog', e));
+  startFx();
 
   const syms = Object.keys(get().positions);
   snapshot(quotes);                       // always leave a mark for today
@@ -158,6 +162,7 @@ async function boot(){
     accrueCashInterest();
     if (a.length) toast(t('cash.applied', { n: a.length }), 'ok');
     connectWs();
+    refreshFx();
     const held = Object.keys(get().positions);
     if (held.length) refreshQuotes(held).then(() => { snapshot(quotes); tickAll(); });
     if (current?.refresh) current.refresh();

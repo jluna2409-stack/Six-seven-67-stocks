@@ -200,3 +200,35 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
 .flash-up{animation:fu .6s} .flash-down{animation:fd .6s}
 @keyframes fu{0%{background:color-mix(in srgb,var(--up) 30%,transparent)}100%{background:transparent}}
 @keyframes fd{0%{background:color-mix(in srgb,var(--down) 30%,transparent)}100%{background:transparent}}
+
+/* ---------- Contextual help ---------- */
+.help-btn{
+  width:19px;height:19px;min-width:19px;border-radius:50%;border:1px solid var(--bg-hair);
+  background:var(--bg-elev2);color:var(--tx2);font-size:11px;font-weight:800;line-height:1;
+  cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center;
+  vertical-align:middle;margin-left:6px;flex:0 0 auto;transition:.15s
+}
+.help-btn:hover{background:var(--accent);color:#fff;border-color:transparent}
+.card-title .help-btn{margin-left:7px}
+.help-body{font-size:14.5px;line-height:1.62;color:var(--tx)}
+.help-body p{margin:12px 0 0}
+.help-body b{font-weight:700}
+.help-body i{font-style:italic}
+.help-body p:last-child i{color:var(--tx2);font-size:13px}
+.help-index{display:flex;flex-direction:column}
+.help-index button{
+  text-align:left;background:none;border:0;border-bottom:1px solid var(--bg-hair);
+  color:var(--tx);padding:13px 2px;font-size:14.5px;cursor:pointer;display:flex;
+  align-items:center;justify-content:space-between;gap:10px
+}
+.help-index button:last-child{border-bottom:0}
+.help-index button::after{content:"›";color:var(--tx3);font-size:19px}
+.help-index button:hover{color:var(--accent)}
+
+/* ---------- Dividends & holdings ---------- */
+.div-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--bg-hair)}
+.div-row:last-child{border-bottom:0}
+.hold-grid{display:grid;grid-template-columns:1fr auto auto;gap:6px 12px;align-items:center;font-size:13.5px}
+.hold-grid .hd{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx2);font-weight:700;padding-bottom:6px;border-bottom:1px solid var(--bg-hair)}
+.hold-grid .hn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hold-grid .ht{font-weight:700;padding-top:8px;border-top:1px solid var(--bg-hair)}

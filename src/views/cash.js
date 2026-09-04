@@ -5,6 +5,7 @@ import { salaryNet } from '../tax.js';
 import { t } from '../i18n.js';
 import { usd, esc, dateLong, dayKey } from '../format.js';
 import { sheet, toast, field, moneyInput, selectInput, confirmSheet } from '../ui.js';
+import { helpBtn } from '../help.js';
 
 const FREQ_LABEL = () => ({
   weekly: t('cash.weekly'), biweekly: t('cash.biweekly'),
@@ -25,7 +26,7 @@ export default function cash(host){
 
     <div class="card">
       <div class="row" style="margin-bottom:10px">
-        <h3 class="card-title" style="margin:0">${esc(t('cash.recurring'))}</h3>
+        <h3 class="card-title" style="margin:0">${esc(t('cash.recurring'))}${helpBtn('recurring')}</h3>
         <button class="btn sm ghost" id="addrec">+ ${esc(t('act.add'))}</button>
       </div>
       <div id="reclist"></div>
@@ -33,7 +34,7 @@ export default function cash(host){
     </div>
 
     <div class="card">
-      <h3 class="card-title">${esc(t('cash.simSalary'))}</h3>
+      <h3 class="card-title">${esc(t('cash.simSalary'))}${helpBtn('salary')}</h3>
       <div id="simbox"></div>
     </div>
 

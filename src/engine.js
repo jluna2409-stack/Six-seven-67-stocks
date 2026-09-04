@@ -234,3 +234,66 @@ export function twr(snaps){
   }
   return (f - 1) * 100;
 }
+
+/* ----------------------------- dividends -------------------------- */
+
+/**
+ * Everything earned from dividends, split from price gains.
+ * @param {number|null} year  restrict to one calendar year, or null for all time
+ */
+export function dividendSummary(state = get(), prices = {}, year = null){
+  const bySymbol = {};
+  let gross = 0, withheld = 0, net = 0, count = 0, firstTs = 0;
+
+  for (const t of state.transactions){
+    if (t.type !== TX.DIVIDEND) continue;
+    const y = new Date(t.ts).getFullYear();
+    if (year != null && y !== year) continue;
+    const g = t.gross || t.amount || 0;
+    const w = t.withheld || 0;
+    gross += g; withheld += w; net += t.amount || (g - w); count++;
+    if (!firstTs || t.ts < firstTs) firstTs = t.ts;
+    const r = bySymbol[t.symbol] || (bySymbol[t.symbol] = { symbol: t.symbol, gross:0, withheld:0, net:0, count:0, lastTs:0 });
+    r.gross += g; r.withheld += w; r.net += t.amount || (g - w); r.count++;
+    r.lastTs = Math.max(r.lastTs, t.ts);
+  }
+
+  // yield on cost: dividends against what the shares still held actually cost
+  const pos = positions(state, prices);
+  const costBy = Object.fromEntries(pos.map(p => [p.symbol, p.cost]));
+  const rows = Object.values(bySymbol).map(r => ({
+    ...r,
+    name: state.positions[r.symbol]?.name || r.symbol,
+    cost: costBy[r.symbol] || 0,
+    yieldOnCost: costBy[r.symbol] > 0 ? r.gross / costBy[r.symbol] * 100 : null,
+    open: !!state.positions[r.symbol]
+  })).sort((a, b) => b.net - a.net);
+
+  const totalCost = pos.reduce((a, p) => a + p.cost, 0);
+  const days = firstTs ? Math.max(1, (Date.now() - firstTs) / 86400000) : 0;
+
+  return {
+    gross, withheld, net, count, rows, totalCost,
+    yieldOnCost: totalCost > 0 ? gross / totalCost * 100 : 0,
+    annualised: days > 30 ? gross * 365 / days : null,   // pace so far, extrapolated
+    monthlyAvg: days > 0 ? net / (days / 30.44) : 0
+  };
+}
+
+/** Compact holdings roll-up: how many shares, of what, worth how much. */
+export function holdingsSummary(state = get(), prices = {}){
+  const rows = positions(state, prices);
+  const stocks = rows.filter(r => !FUND_TYPES.has(r.type));
+  const funds  = rows.filter(r =>  FUND_TYPES.has(r.type));
+  const sum = a => a.reduce((x, r) => x + r.value, 0);
+  return {
+    rows,
+    count: rows.length,
+    totalShares: rows.reduce((a, r) => a + r.qty, 0),
+    value: sum(rows),
+    stocks: { n: stocks.length, shares: stocks.reduce((a,r) => a + r.qty, 0), value: sum(stocks) },
+    funds:  { n: funds.length,  shares: funds.reduce((a,r) => a + r.qty, 0),  value: sum(funds) }
+  };
+}
+
+const FUND_TYPES = new Set(['ETP','Closed-End Fund','Open-End Fund','Mutual Fund']);
