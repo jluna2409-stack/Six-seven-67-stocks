@@ -46,8 +46,11 @@ function buildSeries(state, liveNw){
   }
   const days = RANGES.find(r => r[0] === range)[1];
   const cutoff = Date.now() - days * 86400000;
-  const snaps = state.snapshots.filter(s => days >= 1e6 || dayKeyToTs(s.d) >= cutoff);
-  const pts = snaps.map(s => [dayKeyToTs(s.d), s.nw]);
+  // Points carry their own timestamp now, so several readings in one day sit
+  // where they actually happened instead of stacking on the same date.
+  const at = s => s.ts || dayKeyToTs(s.d);
+  const snaps = state.snapshots.filter(s => days >= 1e6 || at(s) >= cutoff);
+  const pts = snaps.map(s => [at(s), s.nw]);
   if (pts.length){ pts[pts.length - 1] = [Date.now(), liveNw]; }
   // Day one: no daily history yet, so show the live intraday curve instead of an empty box.
   if (pts.length < 2) return intraday.length >= 2 ? intraday.slice() : pts;

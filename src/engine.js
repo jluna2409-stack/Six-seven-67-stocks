@@ -197,16 +197,27 @@ export function payTax(id, amount, meta = {}){
 /* ------------------------- daily bookkeeping ---------------------- */
 
 /** Record / refresh today's net-worth snapshot. */
-export function snapshot(prices = {}){
+/**
+ * Record a net-worth reading.
+ *
+ * Idle readings overwrite the running point for today, so simply leaving the app
+ * open does not pile up thousands of rows. A reading tied to an event (a deposit,
+ * a trade, a dividend) is kept as its own point instead: collapsing the day into
+ * one value erased every step the user actually made that day.
+ */
+export function snapshot(prices = {}, { event = false } = {}){
   const s = get();
   const t = totalsFor(s, prices);
   const d = dayKey();
+  const now = Date.now();
   update(st => {
+    const row = { d, ts: now, nw: t.nw, cash: t.cash, invested: t.invested, contrib: t.contrib };
+    if (event) row.ev = 1;
     const last = st.snapshots[st.snapshots.length - 1];
-    const row = { d, nw: t.nw, cash: t.cash, invested: t.invested, contrib: t.contrib };
-    if (last && last.d === d) st.snapshots[st.snapshots.length - 1] = row;
+    // Only a same-day idle reading may be replaced; an event point is history.
+    if (!event && last && last.d === d && !last.ev) st.snapshots[st.snapshots.length - 1] = row;
     else st.snapshots.push(row);
-    if (st.snapshots.length > 4000) st.snapshots = st.snapshots.slice(-4000);
+    if (st.snapshots.length > 6000) st.snapshots = st.snapshots.slice(-6000);
   }, { silent:true });
 }
 

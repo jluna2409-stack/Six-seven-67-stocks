@@ -1,4 +1,4 @@
-import { load, get, update, persistNow, settings } from './store.js';
+import { load, get, update, persistNow, settings, subscribe } from './store.js';
 import { setLang, getLang, t } from './i18n.js';
 import { connectWs, watch, refreshQuotes, quotes, onTick, onStatus, marketOpen, loadCatalog, getStatus, prefetchProfiles } from './market.js';
 import { snapshot, accrueCashInterest, deposit, totalsFor } from './engine.js';
@@ -165,6 +165,12 @@ async function boot(){
   });
 
   onTick(() => { if (current?.tick) current.tick(); });
+
+  // Anything that moves money leaves its own mark, so the chart shows the step
+  // instead of hiding it inside the day's closing value.
+  subscribe((_, reason) => {
+    if (['trade', 'cash', 'tax', 'recurring'].includes(reason)) snapshot(quotes, { event: true });
+  });
 
   // periodic housekeeping
   setInterval(() => {
