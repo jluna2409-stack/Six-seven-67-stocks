@@ -1,5 +1,6 @@
 import { get, update, settings as S, exportBlob, importFromText, resetAll, persistNow } from '../store.js';
-import { catalogInfo, refreshCatalog, connectWs } from '../market.js';
+import { catalogInfo, refreshCatalog, connectWs, quotes } from '../market.js';
+import { applyRebuild } from '../engine.js';
 import { DEFAULT_TABLES } from '../tax.js';
 import { t, setLang, getLang } from '../i18n.js';
 import { esc, usd, dateTime } from '../format.js';
@@ -68,6 +69,8 @@ export default function settingsView(host, ctx){
       <div class="card">
         <h3 class="card-title">${esc(t('set.data'))}${helpBtn('backup')}</h3>
         <div class="note info" style="margin-bottom:14px">${esc(t('set.storage'))}</div>
+        <div class="note" style="margin-bottom:14px">${esc(t('set.rebuildHelp'))}</div>
+        <button class="btn sec" id="rebuild" style="margin-bottom:14px">${esc(t('set.rebuild'))}</button>
         <div class="stack">
           <button class="btn sec" id="exp">${esc(t('set.export'))}</button>
           <button class="btn sec" id="imp">${esc(t('set.import'))}</button>
@@ -164,6 +167,11 @@ export default function settingsView(host, ctx){
       try { await refreshCatalog(); toast(t('set.saved'), 'ok'); }
       catch { toast(t('set.importErr'), 'err'); }
       $('#refcat').disabled = false; draw();
+    };
+
+    $('#rebuild').onclick = () => {
+      const n = applyRebuild(quotes);
+      toast(n ? t('set.rebuilt', { n }) : t('hist.empty'), n ? 'ok' : 'err');
     };
 
     $('#exp').onclick = () => {

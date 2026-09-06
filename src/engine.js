@@ -1,5 +1,5 @@
 import { get, update, addTx, TX, settings } from './store.js';
-import { dayKey, uid } from './format.js';
+import { dayKey, dayKeyToTs, uid } from './format.js';
 
 /* ------------------------------ pricing --------------------------- */
 
@@ -318,3 +318,71 @@ export function holdingsSummary(state = get(), prices = {}){
 }
 
 const FUND_TYPES = new Set(['ETP','Closed-End Fund','Open-End Fund','Mutual Fund']);
+
+/* --------------------------- history rebuild ---------------------- */
+
+/**
+ * Rebuild the net-worth curve from the transaction ledger.
+ *
+ * Until event snapshots existed, a whole day of activity collapsed into one
+ * closing value, erasing every step. The ledger still holds each movement with
+ * the price it executed at, so the curve can be reconstructed: cash is exact,
+ * and a holding is valued at the last price actually seen for it — its own
+ * execution price, or the live quote for symbols bought before the ledger
+ * starts. It is a reconstruction, not observed data, and every point says so.
+ */
+export function rebuildHistory(state = get(), prices = {}){
+  const txs = state.transactions.slice().sort((a, b) => a.ts - b.ts);
+  const qty = {}, lastPx = {};
+  let cash = 0, contrib = 0;
+  const out = [];
+
+  for (const t of txs){
+    switch (t.type){
+      case TX.DEPOSIT:
+      case TX.SALARY:   cash += t.amount; contrib += t.amount; break;
+      case TX.WITHDRAW: cash -= t.amount; contrib -= t.amount; break;
+      case TX.DIVIDEND:
+      case TX.INTEREST: cash += t.amount; break;
+      case TX.TAX:      cash -= t.amount; break;
+      case TX.BUY:
+        cash -= t.amount;
+        qty[t.symbol] = (qty[t.symbol] || 0) + (t.qty || 0);
+        if (t.price) lastPx[t.symbol] = t.price;
+        break;
+      case TX.SELL:
+        cash += t.amount;
+        qty[t.symbol] = (qty[t.symbol] || 0) - (t.qty || 0);
+        if (t.price) lastPx[t.symbol] = t.price;
+        break;
+      default: break;
+    }
+    let invested = 0;
+    for (const sym in qty){
+      if (qty[sym] <= 1e-9) continue;
+      const px = lastPx[sym] ?? prices[sym]?.c ?? 0;
+      invested += qty[sym] * px;
+    }
+    out.push({
+      d: dayKey(new Date(t.ts)), ts: t.ts, rb: 1,
+      nw: cash + invested, cash, invested, contrib
+    });
+  }
+  return out;
+}
+
+/**
+ * Replace the stored curve with the rebuilt one, keeping any readings that were
+ * genuinely observed after the last movement.
+ */
+export function applyRebuild(prices = {}){
+  const s = get();
+  const rebuilt = rebuildHistory(s, prices);
+  if (!rebuilt.length) return 0;
+  const lastTx = rebuilt[rebuilt.length - 1].ts;
+  const observed = s.snapshots.filter(x => (x.ts || dayKeyToTs(x.d)) > lastTx);
+  update(st => {
+    st.snapshots = rebuilt.concat(observed).slice(-6000);
+  }, { reason:'rebuild' });
+  return rebuilt.length;
+}
