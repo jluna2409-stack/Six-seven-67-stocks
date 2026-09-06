@@ -30,8 +30,15 @@ export function lineChart(host, data, opt = {}){
 
   const ys = data.map(d => d[1]);
   let min = Math.min(...ys), max = Math.max(...ys);
-  if (opt.baseline != null){ min = Math.min(min, opt.baseline); max = Math.max(max, opt.baseline); }
-  if (max - min < 1e-9){ max = max + 1; min = min - 1; }
+  // A span too small to see is not a trend: a weekend with the market closed
+  // leaves every reading identical, and filling that area paints a solid block
+  // that reads as a broken chart.
+  const mid = (max + min) / 2 || 1;
+  const flat = (max - min) / Math.abs(mid) < 0.0002;
+  if (opt.baseline != null && !flat){ min = Math.min(min, opt.baseline); max = Math.max(max, opt.baseline); }
+  // Negligible movement gets a real scale around the midpoint, so a one-cent
+  // difference draws as the flat line it is instead of a dramatic slope.
+  if (flat){ const pad = Math.abs(mid) * 0.01 || 1; max = mid + pad; min = mid - pad; }
   const padY = (max - min) * 0.12;
   min -= padY; max += padY;
 
@@ -41,7 +48,9 @@ export function lineChart(host, data, opt = {}){
   const pts = data.map((d, i) => [X(i), Y(d[1])]);
 
   const rising = data[n-1][1] >= data[0][1];
-  const color = opt.color || (rising ? 'var(--up)' : 'var(--down)');
+  // Flat means flat — colouring it green would claim a gain that did not happen.
+  const color = opt.color || (flat ? 'var(--tx2)' : rising ? 'var(--up)' : 'var(--down)');
+  const sparse = n <= 12;   // few readings: show them as points, not a fake curve
   const id = 'grad' + (++gid);
 
   const svg = document.createElementNS(NS, 'svg');
@@ -55,9 +64,10 @@ export function lineChart(host, data, opt = {}){
         <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
       </linearGradient>
     </defs>
-    <path d="${path(pts)} L ${X(n-1).toFixed(2)} ${H-PAD} L ${X(0).toFixed(2)} ${H-PAD} Z" fill="url(#${id})"/>
-    ${opt.baseline != null ? `<line x1="${PAD}" x2="${W-PAD}" y1="${Y(opt.baseline).toFixed(2)}" y2="${Y(opt.baseline).toFixed(2)}" stroke="var(--tx3)" stroke-width="1" stroke-dasharray="4 5" vector-effect="non-scaling-stroke"/>` : ''}
+    ${flat ? '' : `<path d="${path(pts)} L ${X(n-1).toFixed(2)} ${H-PAD} L ${X(0).toFixed(2)} ${H-PAD} Z" fill="url(#${id})"/>`}
+    ${opt.baseline != null && !flat ? `<line x1="${PAD}" x2="${W-PAD}" y1="${Y(opt.baseline).toFixed(2)}" y2="${Y(opt.baseline).toFixed(2)}" stroke="var(--tx3)" stroke-width="1" stroke-dasharray="4 5" vector-effect="non-scaling-stroke"/>` : ''}
     <path d="${path(pts)}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+    ${sparse ? pts.map(pt => `<circle cx="${pt[0].toFixed(2)}" cy="${pt[1].toFixed(2)}" r="3" fill="${color}" stroke="var(--bg)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`).join('') : ''}
     <g class="scrub" opacity="0">
       <line y1="${PAD}" y2="${H-PAD}" stroke="var(--tx3)" stroke-width="1" vector-effect="non-scaling-stroke"/>
       <circle r="4.5" fill="${color}" stroke="var(--bg)" stroke-width="2" vector-effect="non-scaling-stroke"/>
@@ -103,7 +113,7 @@ export function lineChart(host, data, opt = {}){
   host.addEventListener('touchmove', move, { passive:false });
   host.addEventListener('touchend', up);
 
-  return { destroy(){ window.removeEventListener('pointerup', up); } };
+  return { flat, points: n, destroy(){ window.removeEventListener('pointerup', up); } };
 }
 
 /** Donut / ring chart. slices = [{label, value, color}] */

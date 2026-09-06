@@ -68,6 +68,7 @@ export default function dashboard(host){
       <div class="chart-wrap" id="chart" style="margin-bottom:10px">
         <div class="scrub-readout"><span id="sc-l"></span><span id="sc-r"></span></div>
       </div>
+      <div class="tiny muted" id="chartnote" style="margin:-2px 0 10px;text-align:center"></div>
       <div class="pillrow" id="ranges">
         ${RANGES.map(([k]) => `<button class="chip ${k === range ? 'active' : ''}" data-r="${k}">${esc(t('range.' + k))}</button>`).join('')}
       </div>
@@ -155,7 +156,7 @@ export default function dashboard(host){
     $('nwsub').innerHTML = `<span class="${cls(periodChg)}">${signedUsd(periodChg)} · ${signedPct(periodPct)}</span> <span class="muted">${esc(rangeLabel)}</span>`;
 
     // ---- chart
-    lineChart($('chart'), pts, {
+    const ch = lineChart($('chart'), pts, {
       height: 190,
       baseline: pts.length ? pts[0][1] : null,
       emptyText: t('dash.nodata'),
@@ -171,6 +172,13 @@ export default function dashboard(host){
         $('sc-r').innerHTML = `<span class="${cls(d)}">${signedUsd(d)}</span>`;
       }
     });
+    // Say why the line looks the way it does, instead of leaving a puzzling shape.
+    const note = $('chartnote');
+    if (!pts.length) note.textContent = '';
+    else if (ch.flat) note.textContent = t('chart.flat');
+    else if (ch.points <= 3) note.textContent = t('chart.few', { n: ch.points });
+    else note.textContent = '';
+
     // keep the readout box above the chart
     const ro = document.createElement('div');
     ro.className = 'scrub-readout';

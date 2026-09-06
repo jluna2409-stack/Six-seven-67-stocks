@@ -11,7 +11,7 @@ export const DICT = {
     'dash.gain':'Ganancia total','dash.contrib':'Aportado neto','dash.unrealized':'Plusvalía no realizada',
     'dash.realized':'Ganancia realizada','dash.taxdue':'Impuesto estimado','dash.positions':'Posiciones',
     'dash.alloc':'Distribución','dash.since':'desde el inicio','dash.watch':'Precios en vivo',
-    'dash.nodata':'Aún no hay historial. El patrimonio se registra automáticamente cada día que abras la app.',
+    'dash.nodata':'Aún no hay historial. El patrimonio se registra automáticamente cada día que abras la app.','chart.flat':'Sin cambios en este periodo — el mercado estuvo cerrado o los precios no se movieron.','chart.few':'{n} mediciones registradas. La curva se va formando cada día que abras la app.',
     'dash.emptyPos':'No tienes posiciones. Ve a Operar para comprar tu primera acción o ETF.',
     'dash.twr':'Rendimiento (TWR)','dash.money':'Dinero',
 
@@ -126,7 +126,7 @@ export const DICT = {
     'dash.gain':'Total gain','dash.contrib':'Net contributed','dash.unrealized':'Unrealized gain',
     'dash.realized':'Realized gain','dash.taxdue':'Estimated tax','dash.positions':'Positions',
     'dash.alloc':'Allocation','dash.since':'since inception','dash.watch':'Live prices',
-    'dash.nodata':'No history yet. Net worth is recorded automatically each day you open the app.',
+    'dash.nodata':'No history yet. Net worth is recorded automatically each day you open the app.','chart.flat':'No change over this period — the market was closed or prices did not move.','chart.few':'{n} readings recorded. The curve fills in each day you open the app.',
     'dash.emptyPos':'No positions yet. Go to Trade to buy your first stock or ETF.',
     'dash.twr':'Return (TWR)','dash.money':'Money',
 
