@@ -339,6 +339,24 @@ export function lookup(symbol){
 /* --------------------------- dividend history ---------------------- */
 
 /**
+ * Classify a non-data answer from Alpha Vantage.
+ *
+ * It signals very different problems through the same fields, so they must not
+ * all be reported as "quota used up": a missing key answers with Error Message,
+ * the sample key and the daily cap both answer with Information.
+ */
+function avProblem(j){
+  const msg = String(j?.Information || j?.Note || j?.['Error Message'] || '');
+  if (!msg) return null;
+  const low = msg.toLowerCase();
+  if (low.includes('demo')) return 'demo';
+  if (low.includes('rate limit') || low.includes('requests per day') || low.includes('higher api call'))
+    return 'limit';
+  if (j?.['Error Message'] || low.includes('apikey') || low.includes('invalid api call')) return 'key';
+  return 'other';
+}
+
+/**
  * Announced dividends for a symbol: ex-date, payment date and amount per share.
  *
  * Finnhub's dividend feed is a paid endpoint, but Alpha Vantage serves the same
@@ -352,8 +370,9 @@ export async function fetchDividendHistory(symbol, { maxAgeMs = 20 * 3600_000, f
   const cached = get().divHistory?.[symbol];
   if (!force && cached && Date.now() - cached.at < maxAgeMs) return cached.rows;
 
-  // The free tier allows 25 requests a day. Once it says no, asking again only
-  // burns nothing and returns nothing, so stand down until tomorrow.
+  // Once the cap is hit, asking again returns nothing — but the quota resets on
+  // the provider's clock, not the user's, so back off for a couple of hours
+  // rather than the rest of the day and let it recover on its own.
   if (!force && Date.now() < (get().avLimitedUntil || 0)) throw new Error('av-limit');
 
   const u = new URL('https://www.alphavantage.co/query');
@@ -370,11 +389,11 @@ export async function fetchDividendHistory(symbol, { maxAgeMs = 20 * 3600_000, f
 
   // Rate limit or a bad key answer with a note instead of data; keep what we had.
   if (!j || !Array.isArray(j.data)){
-    if (j && (j.Information || j.Note)){
-      const t = new Date(); t.setHours(24, 5, 0, 0);          // retry after midnight
-      update(st => { st.avLimitedUntil = t.getTime(); }, { silent:true });
-      throw new Error('av-limit');
+    const problem = avProblem(j);
+    if (problem === 'limit'){
+      update(st => { st.avLimitedUntil = Date.now() + 2 * 3600_000; }, { silent:true });
     }
+    if (problem) throw new Error('av-' + problem);
     return cached?.rows || null;
   }
 

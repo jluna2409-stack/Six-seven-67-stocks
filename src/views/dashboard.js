@@ -397,9 +397,12 @@ export default function dashboard(host){
     catch { box.innerHTML = ''; restore(); return; }
     restore();
 
-    if (scan.limited){
-      box.innerHTML = quiet ? '' : `<div class="note" style="margin-bottom:14px">${esc(t('dv.limit'))}</div>`;
-      if (!quiet) toast(t('dv.limitShort'), 'err');
+    if (scan.problem){
+      // Each refusal means something different; saying "quota used up" for a bad
+      // key sends the user to wait a day for a problem they could fix now.
+      const key = { limit:'dv.limit', demo:'dv.demo', key:'dv.badkey' }[scan.problem] || 'dv.other';
+      box.innerHTML = `<div class="note" style="margin-bottom:14px">${esc(t(key))}</div>`;
+      if (!quiet) toast(t(scan.problem === 'limit' ? 'dv.limitShort' : 'set.importErr'), 'err');
       return;
     }
     paintScan(scan.pending, scan.upcoming[0] || null);

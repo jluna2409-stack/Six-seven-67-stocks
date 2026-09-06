@@ -41,7 +41,7 @@ export function alreadyRecorded(state, symbol, exDate){
  */
 export async function scanDividends(state = get(), { force = false } = {}){
   const s = settings();
-  const out = { pending: [], upcoming: [], needsKey: !s.avKey, limited: false };
+  const out = { pending: [], upcoming: [], needsKey: !s.avKey, limited: false, problem: null };
   if (!s.avKey) return out;
 
   const today = dayKey();
@@ -49,8 +49,9 @@ export async function scanDividends(state = get(), { force = false } = {}){
     let rows;
     try { rows = await fetchDividendHistory(symbol, { force }); }
     catch (e){
-      // One cap means the whole budget is gone; asking for the rest wastes it.
-      if (String(e.message) === 'av-limit'){ out.limited = true; break; }
+      // Whatever the provider is refusing, it will refuse the rest too.
+      const m = String(e.message);
+      if (m.startsWith('av-')){ out.problem = m.slice(3); out.limited = out.problem === 'limit'; break; }
       continue;
     }
     if (!rows) continue;
