@@ -147,6 +147,10 @@ export function connectWs(){
       q.c = d.p; q.t = Math.floor(d.t / 1000); q.src = 'ws'; q.at = Date.now();
       emitTick(d.s);
     }
+    // Trades are arriving: that is what "live" means. Without this the badge
+    // stays on whatever it was when the socket opened, so a tab left open
+    // before the bell still claimed the market was closed.
+    if (m.data.length && status.state !== 'live') setStatus('live');
   };
   ws.onerror = () => { if (!wsReady) setStatus('err'); };
   ws.onclose = () => {
@@ -159,6 +163,16 @@ export function connectWs(){
 }
 
 function wsSend(o){ if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(o)); }
+
+/**
+ * Recompute the feed badge from what is actually true right now, so a session
+ * that spans the opening bell moves from closed to live on its own.
+ */
+export function refreshStatus(){
+  if (status.state === 'err') return;
+  if (!marketOpen()){ setStatus('closed'); return; }
+  setStatus(wsReady ? 'live' : (wsRetry >= 2 ? 'delayed' : 'connecting'));
+}
 
 export function watch(symbols){
   const next = new Set(symbols);

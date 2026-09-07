@@ -1,6 +1,6 @@
 import { load, get, update, persistNow, settings, subscribe } from './store.js';
 import { setLang, getLang, t } from './i18n.js';
-import { connectWs, watch, refreshQuotes, quotes, onTick, onStatus, marketOpen, loadCatalog, getStatus, prefetchProfiles } from './market.js';
+import { connectWs, watch, refreshQuotes, quotes, onTick, onStatus, marketOpen, loadCatalog, getStatus, prefetchProfiles, refreshStatus } from './market.js';
 import { snapshot, accrueCashInterest, deposit, totalsFor } from './engine.js';
 import { runDue } from './scheduler.js';
 import { startFx, refreshFx } from './fx.js';
@@ -183,11 +183,7 @@ async function boot(){
     if (!held.length) return;
     if (!marketOpen() || getStatus().state !== 'live') refreshQuotes(held).then(tickAll);
   }, 5 * 60_000);
-  setInterval(() => {
-    const cur = getStatus().state;
-    if (cur === 'live' || cur === 'err') return paintStatus(getStatus());
-    paintStatus({ state: marketOpen() ? cur : 'closed' });
-  }, 30_000);
+  setInterval(refreshStatus, 30_000);
 
   document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState !== 'visible') { persistNow(); return; }
