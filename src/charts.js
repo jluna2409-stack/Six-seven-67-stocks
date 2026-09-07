@@ -1,6 +1,15 @@
 /** Lightweight SVG charts — no dependencies, scrub-on-touch like the Stocks app. */
 
 const NS = 'http://www.w3.org/2000/svg';
+
+/** True when a series barely moves — used to shrink and restyle the chart. */
+export function isFlatSeries(data){
+  if (!data || data.length < 2) return false;
+  const ys = data.map(d => d[1]);
+  const min = Math.min(...ys), max = Math.max(...ys);
+  const mid = (max + min) / 2 || 1;
+  return (max - min) / Math.abs(mid) < 0.0002;
+}
 let gid = 0;
 
 export const PALETTE = ['#0a84ff','#30d158','#bf5af0','#ff9f0a','#64d2ff','#ff375f','#ffd60a','#5e5ce6','#ac8e68','#32ade6'];

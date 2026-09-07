@@ -42,6 +42,22 @@ export function marketOpen(now = new Date()){
   return mins >= 570 && mins < 960;   // 9:30 -> 16:00 ET (holidays not modelled)
 }
 
+/** When the US market next opens, as a Date (holidays are not modelled). */
+export function nextMarketOpen(now = new Date()){
+  const STEP = 30 * 60_000;
+  let t = now.getTime();
+  for (let i = 0; i < 8 * 48; i++){          // scan a week ahead in half hours
+    t += STEP;
+    if (marketOpen(new Date(t))){
+      // Walk back to the minute the session actually starts.
+      let back = t;
+      while (marketOpen(new Date(back - 60_000))) back -= 60_000;
+      return new Date(back);
+    }
+  }
+  return null;
+}
+
 /* ------------------------------ REST ------------------------------ */
 
 async function api(path, params = {}){

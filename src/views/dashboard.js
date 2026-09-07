@@ -1,9 +1,9 @@
 import { get, update } from '../store.js';
 import { totalsFor, positions, twr, dividendSummary, holdingsSummary } from '../engine.js';
-import { quotes, isFund } from '../market.js';
+import { quotes, isFund, marketOpen, nextMarketOpen } from '../market.js';
 import { t } from '../i18n.js';
-import { usd, usdCompact, signedUsd, signedPct, pct, cls, esc, dayKey, dayKeyToTs, dateLong, timeShort, num } from '../format.js';
-import { lineChart, donut, PALETTE } from '../charts.js';
+import { usd, usdCompact, signedUsd, signedPct, pct, cls, esc, dayKey, dayKeyToTs, dateLong, dateWeekday, timeShort, num } from '../format.js';
+import { lineChart, donut, PALETTE, isFlatSeries } from '../charts.js';
 import { latentTax } from '../taxreport.js';
 import { helpBtn } from '../help.js';
 import { sheet, toast } from '../ui.js';
@@ -159,8 +159,10 @@ export default function dashboard(host){
     $('nwsub').innerHTML = `<span class="${cls(periodChg)}">${signedUsd(periodChg)} · ${signedPct(periodPct)}</span> <span class="muted">${esc(rangeLabel)}</span>`;
 
     // ---- chart
+    // A flat line in a full-height box is a lot of empty space; shrink it.
+    const flatNow = isFlatSeries(pts);
     const ch = lineChart($('chart'), pts, {
-      height: 190,
+      height: flatNow ? 88 : 190,
       baseline: pts.length ? pts[0][1] : null,
       emptyText: t('dash.nodata'),
       onScrub(p){
@@ -178,7 +180,13 @@ export default function dashboard(host){
     // Say why the line looks the way it does, instead of leaving a puzzling shape.
     const note = $('chartnote');
     if (!pts.length) note.textContent = '';
-    else if (ch.flat) note.textContent = t('chart.flat');
+    else if (ch.flat){
+      // Dead space is better spent saying when things start moving again.
+      const open = !marketOpen() ? nextMarketOpen() : null;
+      note.innerHTML = open
+        ? `${esc(t('chart.closed'))} <b>${esc(dateWeekday(open))}</b>`
+        : esc(t('chart.flat'));
+    }
     else if (ch.points <= 3) note.textContent = t('chart.few', { n: ch.points });
     else note.textContent = '';
 

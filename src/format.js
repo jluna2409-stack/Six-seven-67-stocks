@@ -38,6 +38,12 @@ export function dateLong(ts){
 export function dateTime(ts){
   return new Date(ts).toLocaleString(loc(), { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
 }
+/** "lunes 7 de sep, 8:30 a.m." in the app's language, not the browser's. */
+export function dateWeekday(ts){
+  return new Date(ts).toLocaleString(loc(), {
+    weekday:'long', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'
+  });
+}
 export function timeShort(ts){
   return new Date(ts).toLocaleTimeString(loc(), { hour:'2-digit', minute:'2-digit' });
 }
