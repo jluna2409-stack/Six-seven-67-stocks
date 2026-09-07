@@ -30,16 +30,84 @@ function emitTick(sym){
 
 /* --------------------------- market clock ------------------------- */
 
-/** US regular session: Mon–Fri 09:30–16:00 America/New_York. */
+/** Easter Sunday (Meeus/Jones/Butcher), needed for Good Friday. */
+function easter(year){
+  const a = year % 19, b = Math.floor(year / 100), c = year % 100;
+  const d = Math.floor(b / 4), e = b % 4;
+  const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4), k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+const iso = d => d.toISOString().slice(0, 10);
+
+/** Nth given weekday of a month, e.g. the 1st Monday of September. */
+function nth(year, month, weekday, n){
+  const d = new Date(Date.UTC(year, month, 1));
+  let count = 0;
+  while (true){
+    if (d.getUTCDay() === weekday && ++count === n) return d;
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+}
+function lastWeekday(year, month, weekday){
+  const d = new Date(Date.UTC(year, month + 1, 0));
+  while (d.getUTCDay() !== weekday) d.setUTCDate(d.getUTCDate() - 1);
+  return d;
+}
+/** Fixed-date holidays move to Friday when they fall on Saturday, Monday on Sunday. */
+function observed(d){
+  const wd = d.getUTCDay();
+  const out = new Date(d);
+  if (wd === 6) out.setUTCDate(out.getUTCDate() - 1);
+  else if (wd === 0) out.setUTCDate(out.getUTCDate() + 1);
+  return out;
+}
+
+const holidayCache = {};
+
+/** NYSE / Nasdaq full-day closures for a year, as YYYY-MM-DD in New York. */
+export function marketHolidays(year){
+  if (holidayCache[year]) return holidayCache[year];
+  const gf = easter(year); gf.setUTCDate(gf.getUTCDate() - 2);   // Good Friday
+  const days = [
+    observed(new Date(Date.UTC(year, 0, 1))),      // New Year's Day
+    nth(year, 0, 1, 3),                            // MLK Day
+    nth(year, 1, 1, 3),                            // Presidents' Day
+    gf,
+    lastWeekday(year, 4, 1),                       // Memorial Day
+    observed(new Date(Date.UTC(year, 5, 19))),     // Juneteenth
+    observed(new Date(Date.UTC(year, 6, 4))),      // Independence Day
+    nth(year, 8, 1, 1),                            // Labor Day
+    nth(year, 10, 4, 4),                           // Thanksgiving
+    observed(new Date(Date.UTC(year, 11, 25)))     // Christmas
+  ].map(iso);
+  holidayCache[year] = new Set(days);
+  return holidayCache[year];
+}
+
+/**
+ * US regular session: Mon–Fri 09:30–16:00 America/New_York, excluding the
+ * exchange holidays. Without the holiday list the app claimed a live feed on
+ * days like Labor Day, when no trade ever arrives.
+ */
 export function marketOpen(now = new Date()){
   const p = new Intl.DateTimeFormat('en-US', {
-    timeZone:'America/New_York', weekday:'short', hour:'2-digit', minute:'2-digit', hour12:false
+    timeZone:'America/New_York', weekday:'short', year:'numeric', month:'2-digit', day:'2-digit',
+    hour:'2-digit', minute:'2-digit', hour12:false
   }).formatToParts(now);
   const g = k => p.find(x => x.type === k)?.value;
   const wd = g('weekday');
   if (wd === 'Sat' || wd === 'Sun') return false;
+  const key = `${g('year')}-${g('month')}-${g('day')}`;
+  if (marketHolidays(Number(g('year'))).has(key)) return false;
   const mins = Number(g('hour')) * 60 + Number(g('minute'));
-  return mins >= 570 && mins < 960;   // 9:30 -> 16:00 ET (holidays not modelled)
+  return mins >= 570 && mins < 960;   // 9:30 -> 16:00 ET
 }
 
 /** When the US market next opens, as a Date (holidays are not modelled). */
@@ -271,7 +339,20 @@ export const INDEXES = [
   { sym:'AGG',  index:'US Bonds',             alias:'bonos bonds renta fija aggregate' },
   { sym:'VNQ',  index:'US Real Estate',       alias:'bienes raices inmobiliario real estate reits' },
   { sym:'GLD',  index:'Gold',                 alias:'oro gold metales' },
-  { sym:'SLV',  index:'Silver',               alias:'plata silver metales' }
+  { sym:'SLV',  index:'Silver',               alias:'plata silver metales' },
+  { sym:'EWW',  index:'Mexico (MSCI)',         alias:'mexico mexicano mexicana mexicanas bmv ipc bolsa mexicana' },
+
+  // Mexican companies trade in New York as ADRs; the BMV itself is a paid feed.
+  // Not on the shelf (they are companies, not indexes) but reachable by alias.
+  { sym:'AMX',  index:'América Móvil',   shelf:false, alias:'mexico mexicana telcel telmex america movil' },
+  { sym:'FMX',  index:'FEMSA',           shelf:false, alias:'mexico mexicana femsa oxxo' },
+  { sym:'KOF',  index:'Coca-Cola FEMSA', shelf:false, alias:'mexico mexicana coca cola femsa' },
+  { sym:'CX',   index:'Cemex',           shelf:false, alias:'mexico mexicana cemex cemento' },
+  { sym:'TV',   index:'Televisa',        shelf:false, alias:'mexico mexicana televisa' },
+  { sym:'ASR',  index:'Grupo Aeroportuario del Sureste', shelf:false, alias:'mexico mexicana asur aeropuertos' },
+  { sym:'PAC',  index:'Grupo Aeroportuario del Pacífico', shelf:false, alias:'mexico mexicana gap aeropuertos' },
+  { sym:'OMAB', index:'Grupo Aeroportuario Centro Norte', shelf:false, alias:'mexico mexicana oma aeropuertos' },
+  { sym:'VLRS', index:'Volaris',         shelf:false, alias:'mexico mexicana volaris aerolinea' }
 ];
 
 const INDEX_BY_SYM = Object.fromEntries(INDEXES.map(i => [i.sym, i]));
@@ -301,7 +382,9 @@ export function matchIndexes(q){
     else if (terms.some(t => t === nospace)) score = 0;
     else if (joined.includes(n)) score = 1;
     else if (norm(it.index).replace(/ /g, '').includes(nospace)) score = 1;
-    else if (terms.some(t => t.startsWith(n))) score = 2;
+    // Also match the other way round, so a plural finds a singular alias
+    // ("mexicanas" -> "mexicana") without listing every inflection.
+    else if (terms.some(t => t.startsWith(n) || (n.length > 4 && n.startsWith(t) && t.length > 3))) score = 2;
     if (score !== null) out.push([score, it]);
   }
   return out.sort((a, b) => a[0] - b[0]).map(x => x[1]);

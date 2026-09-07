@@ -107,6 +107,7 @@ export default function trade(host){
   function renderIndexes(){
     const seen = new Set();
     const rows = INDEXES.filter(i => {
+      if (i.shelf === false) return false;      // searchable by alias, not on the shelf
       if (seen.has(i.index)) return false;      // one fund per index on the shelf
       seen.add(i.index); return true;
     });
