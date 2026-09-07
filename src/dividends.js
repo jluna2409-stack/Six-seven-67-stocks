@@ -45,15 +45,23 @@ export async function scanDividends(state = get(), { force = false } = {}){
   if (!s.avKey) return out;
 
   const today = dayKey();
+  let throttled = 0;
   for (const symbol of Object.keys(state.positions)){
     let rows;
     try { rows = await fetchDividendHistory(symbol, { force }); }
     catch (e){
-      // Whatever the provider is refusing, it will refuse the rest too.
       const m = String(e.message);
-      if (m.startsWith('av-')){ out.problem = m.slice(3); out.limited = out.problem === 'limit'; break; }
+      if (!m.startsWith('av-')) continue;
+      const kind = m.slice(3);
+      if (kind !== 'limit'){ out.problem = kind; break; }   // a key problem stops everything
+      // The throttle is erratic, so one refused symbol does not mean the rest
+      // will fail. Only a run of them is real evidence the allowance is gone.
+      throttled++;
+      out.problem = 'limit';
+      if (throttled >= 3){ out.limited = true; break; }
       continue;
     }
+    throttled = 0;
     if (!rows) continue;
 
     for (const d of rows){
@@ -68,6 +76,9 @@ export async function scanDividends(state = get(), { force = false } = {}){
       out.pending.push(item);
     }
   }
+  // Some symbols came back despite the throttle: that is a partial result, not
+  // a dead end, so do not report it as a hard failure.
+  if (out.problem === 'limit' && !out.limited && (out.pending.length || out.upcoming.length)) out.problem = null;
   out.pending.sort((a, b) => a.payDate.localeCompare(b.payDate));
   out.upcoming.sort((a, b) => a.payDate.localeCompare(b.payDate));
   // Kept so the banner survives navigation: re-rendering must not need the network.

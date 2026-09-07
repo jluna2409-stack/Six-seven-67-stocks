@@ -380,18 +380,33 @@ export async function fetchDividendHistory(symbol, { maxAgeMs = 20 * 3600_000, f
   u.searchParams.set('symbol', symbol);
   u.searchParams.set('apikey', s.avKey);
 
-  let j;
-  try {
-    const r = await fetch(u);
-    if (!r.ok) return cached?.rows || null;
-    j = await r.json();
-  } catch { return cached?.rows || null; }
+  // Alpha Vantage throttles by IP as well as by key, and does it erratically:
+  // back-to-back calls with fresh keys can be refused and then succeed. One
+  // refusal is not evidence the day's allowance is gone, so retry before
+  // believing it.
+  let j = null;
+  for (let attempt = 0; attempt < 3; attempt++){
+    if (attempt) await new Promise(r => setTimeout(r, 700 * attempt));
+    try {
+      const r = await fetch(u);
+      if (!r.ok) return cached?.rows || null;
+      j = await r.json();
+    } catch { return cached?.rows || null; }
+    if (Array.isArray(j?.data)) break;
+    if (avProblem(j) !== 'limit') break;      // a real key problem will not fix itself
+  }
 
   // Rate limit or a bad key answer with a note instead of data; keep what we had.
   if (!j || !Array.isArray(j.data)){
     const problem = avProblem(j);
     if (problem === 'limit'){
-      update(st => { st.avLimitedUntil = Date.now() + 2 * 3600_000; }, { silent:true });
+      // Short back-off: the throttle is erratic and often clears in minutes.
+      update(st => {
+        st.avLimitedUntil = Date.now() + 20 * 60_000;
+        st.avLastMessage = String(j.Information || j.Note || '').slice(0, 300);
+      }, { silent:true });
+    } else if (problem){
+      update(st => { st.avLastMessage = String(j.Information || j.Note || j['Error Message'] || '').slice(0, 300); }, { silent:true });
     }
     if (problem) throw new Error('av-' + problem);
     return cached?.rows || null;

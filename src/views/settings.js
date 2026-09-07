@@ -24,6 +24,9 @@ export default function settingsView(host, ctx){
         <h3 class="card-title">${esc(t('set.market'))}${helpBtn('history')}</h3>
         ${field(t('set.apikey'), `<input type="text" name="apiKey" value="${esc(s.apiKey)}" spellcheck="false" />`)}
         ${field(t('set.avkey'), `<input type="text" name="avKey" value="${esc(s.avKey)}" spellcheck="false" placeholder="—" />`, esc(t('set.avHelp')))}
+        <button class="btn sec" id="avtest" style="margin-bottom:10px">${esc(t('set.avTest'))}</button>
+        <div class="tiny muted" id="avout" style="margin:-4px 0 12px;line-height:1.5">${
+          s.avLastMessage ? `<b>${esc(t('set.avLast'))}:</b> ${esc(s.avLastMessage)}` : ''}</div>
         <div class="row small" style="margin:6px 0 12px">
           <span class="muted">${esc(t('set.catalogInfo', { n: c.count.toLocaleString(), e: c.etfs.toLocaleString(), d: c.generated }))}</span>
         </div>
@@ -167,6 +170,30 @@ export default function settingsView(host, ctx){
       try { await refreshCatalog(); toast(t('set.saved'), 'ok'); }
       catch { toast(t('set.importErr'), 'err'); }
       $('#refcat').disabled = false; draw();
+    };
+
+    $('#avtest').onclick = async () => {
+      const key = g('avKey').value.trim();
+      const out = $('#avout');
+      if (!key){ out.textContent = t('dv.badkey'); return; }
+      out.textContent = t('set.avTesting');
+      $('#avtest').disabled = true;
+      try {
+        const u = new URL('https://www.alphavantage.co/query');
+        u.searchParams.set('function', 'DIVIDENDS');
+        u.searchParams.set('symbol', 'IVV');
+        u.searchParams.set('apikey', key);
+        const j = await (await fetch(u)).json();
+        if (Array.isArray(j.data)){
+          out.innerHTML = `<span class="up">${esc(t('set.avOk', { n: j.data.length }))}</span>`;
+          update(st => { st.avLimitedUntil = 0; st.avLastMessage = ''; }, { silent:true });
+        } else {
+          const msg = String(j.Information || j.Note || j['Error Message'] || JSON.stringify(j)).slice(0, 300);
+          out.innerHTML = `<span class="down">${esc(t('set.avFail', { m: msg }))}</span>`;
+          update(st => { st.avLastMessage = msg; }, { silent:true });
+        }
+      } catch (e){ out.textContent = String(e.message); }
+      $('#avtest').disabled = false;
     };
 
     $('#rebuild').onclick = () => {

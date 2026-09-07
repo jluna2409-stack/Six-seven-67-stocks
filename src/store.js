@@ -40,6 +40,7 @@ export const DEFAULT_STATE = () => ({
   profiles: {},         // SYM -> issuer profile from Finnhub (name, logo, exchange)
   divHistory: {},       // SYM -> announced dividends from Alpha Vantage
   avLimitedUntil: 0,    // provider daily cap hit; do not ask again before this
+  avLastMessage: '',    // last refusal text from the dividend provider, verbatim
   lastDivScan: '',      // day key of the last automatic dividend scan
   divPending: [],       // dividends found and not yet recorded
   divUpcoming: null,    // the next announced payment, for information
